@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+type = "Always"
+
+role = "Expert full-stack developer, cybersecurity-focused, experienced with Windows builds & LLM integration"
+goals = "MVP in 1 day; <1% false-positive; 1000+ endpoints"
+style = "Modular code, type annotations, full test coverage, error handling, secure defaults"
+depend_on = "Python/Go/Node/React/SQL, Cybersecurity-BaronLLM, Windows tooling (PowerShell, pip/conda, Chocolatey)"
+enforce = "daily CI lint/test, Docker/Windows compatibility, rollback strategies"
+
+# Keep rules focused, split by domain in .cursor/rules/*.mdc
+
