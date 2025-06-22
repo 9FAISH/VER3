@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import './App.css'
-// import jsPDF from 'jspdf' // Uncomment if jsPDF is installed
 
 // Types for structured scan report
 interface Finding {
@@ -117,7 +116,7 @@ function App() {
       setBackendStatus('down')
     }
     try {
-      // LLM service health (placeholder, update port/path as needed)
+      // LLM service health
       const llmRes = await fetch('http://localhost:8000/health')
       setLlmStatus(llmRes.ok ? 'ok' : 'down')
     } catch {
@@ -146,17 +145,6 @@ function App() {
     }
   }
 
-  // Helper for severity color
-  const severityColor = (sev: string) => {
-    switch (sev?.toLowerCase()) {
-      case 'critical': return '#ff1744'
-      case 'high': return '#ff9100'
-      case 'medium': return '#ffd600'
-      case 'low': return '#00b0ff'
-      default: return '#bdbdbd'
-    }
-  }
-
   // Export as JSON
   const handleExportJSON = () => {
     if (!scanResult) return
@@ -168,9 +156,9 @@ function App() {
     a.click()
     URL.revokeObjectURL(url)
   }
-  // Export as PDF (stub, requires jsPDF)
+
+  // Export as PDF (stub)
   const handleExportPDF = () => {
-    // TODO: Implement PDF export using jsPDF or similar
     alert('PDF export coming soon!')
   }
 
@@ -189,50 +177,155 @@ function App() {
     })
   }
 
+  const getSeverityClass = (severity: string) => {
+    return `ss-severity ${severity.toLowerCase()}`
+  }
+
+  const getStatusClass = (status: string) => {
+    return `ss-status ${status}`
+  }
+
   return (
     <div className="ss-root">
       <header className="ss-header">
-        <h1>SentinelSecure Dashboard</h1>
-        <nav>
-          <button onClick={() => setView('dashboard')}>Dashboard</button>
-          <button onClick={() => setView('scan')}>Scan</button>
-          <button onClick={() => { setView('logs'); fetchLogs(); }}>Logs</button>
-          <button onClick={() => { setView('status'); fetchStatus(); }}>Status</button>
-          <button onClick={() => setView('llm')}>LLM Analysis</button>
-        </nav>
-      </header>
-      <main className="ss-main">
-        {view === 'dashboard' && <div>Welcome to SentinelSecure! Select a feature above.</div>}
-        {view === 'scan' && (
-          <div>
-            <h2>Run Vulnerability/Network Scan</h2>
-            <input
-              type="text"
-              value={scanTarget}
-              onChange={e => setScanTarget(e.target.value)}
-              placeholder="Target IP or hostname"
-              disabled={scanLoading}
-            />
-            <button onClick={handleScan} disabled={scanLoading || !scanTarget}>
-              {scanLoading ? 'Scanning...' : 'Start Scan'}
+        <div className="ss-header-content">
+          <h1>SentinelSecure</h1>
+          <nav>
+            <button 
+              className={`ss-nav-button ${view === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setView('dashboard')}
+            >
+              🏠 Dashboard
             </button>
-            {scanError && <div style={{ color: 'red' }}>Error: {scanError}</div>}
-            {scanResult && Array.isArray(scanResult.PhaseResults) ? (
-              <div style={{ marginTop: 16 }}>
-                <h3>Scan Report for <span style={{ color: '#8be9fd' }}>{scanResult.Target}</span></h3>
-                <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>Scan started: {scanResult.Timestamp || '(time not set)'}</div>
-                {/* Export and filter controls */}
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-                  <button onClick={handleExportJSON} style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 14px', cursor: 'pointer' }}>Export JSON</button>
-                  <button onClick={handleExportPDF} style={{ background: '#444', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 14px', cursor: 'pointer' }}>Export PDF</button>
+            <button 
+              className={`ss-nav-button ${view === 'scan' ? 'active' : ''}`}
+              onClick={() => setView('scan')}
+            >
+              🔍 Scan
+            </button>
+            <button 
+              className={`ss-nav-button ${view === 'logs' ? 'active' : ''}`}
+              onClick={() => { setView('logs'); fetchLogs(); }}
+            >
+              📋 Logs
+            </button>
+            <button 
+              className={`ss-nav-button ${view === 'status' ? 'active' : ''}`}
+              onClick={() => { setView('status'); fetchStatus(); }}
+            >
+              ⚡ Status
+            </button>
+            <button 
+              className={`ss-nav-button ${view === 'llm' ? 'active' : ''}`}
+              onClick={() => setView('llm')}
+            >
+              🤖 AI Analysis
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      <main className="ss-main">
+        {view === 'dashboard' && (
+          <div className="ss-welcome">
+            <h2>Welcome to SentinelSecure</h2>
+            <p>
+              Advanced cybersecurity scanning platform powered by AI. 
+              Discover vulnerabilities, analyze threats, and secure your infrastructure.
+            </p>
+            <div className="ss-feature-grid">
+              <div className="ss-feature-card" onClick={() => setView('scan')}>
+                <div className="ss-feature-icon">🔍</div>
+                <h3>Network Scanning</h3>
+                <p>Comprehensive vulnerability assessment and network reconnaissance</p>
+              </div>
+              <div className="ss-feature-card" onClick={() => setView('llm')}>
+                <div className="ss-feature-icon">🤖</div>
+                <h3>AI Analysis</h3>
+                <p>Intelligent threat analysis powered by advanced language models</p>
+              </div>
+              <div className="ss-feature-card" onClick={() => setView('status')}>
+                <div className="ss-feature-icon">⚡</div>
+                <h3>System Status</h3>
+                <p>Monitor service health and system performance in real-time</p>
+              </div>
+              <div className="ss-feature-card" onClick={() => setView('logs')}>
+                <div className="ss-feature-icon">📋</div>
+                <h3>Activity Logs</h3>
+                <p>Track system activities and security events</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'scan' && (
+          <div className="ss-card">
+            <h2>🔍 Vulnerability Scanner</h2>
+            <div className="ss-input-group">
+              <input
+                type="text"
+                className="ss-input"
+                value={scanTarget}
+                onChange={e => setScanTarget(e.target.value)}
+                placeholder="Enter target IP or hostname"
+                disabled={scanLoading}
+              />
+              <button 
+                className="ss-button" 
+                onClick={handleScan} 
+                disabled={scanLoading || !scanTarget}
+              >
+                {scanLoading ? (
+                  <span className="ss-loading">
+                    <div className="ss-spinner"></div>
+                    Scanning...
+                  </span>
+                ) : (
+                  'Start Scan'
+                )}
+              </button>
+            </div>
+
+            {scanError && (
+              <div className="ss-error">
+                <strong>Error:</strong> {scanError}
+              </div>
+            )}
+
+            {scanResult && Array.isArray(scanResult.PhaseResults) && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="mb-1">Scan Report: <span style={{ color: '#00d4ff' }}>{scanResult.Target}</span></h3>
+                    <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
+                      Started: {new Date(scanResult.Timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="ss-button-secondary" onClick={handleExportJSON}>
+                      📄 Export JSON
+                    </button>
+                    <button className="ss-button-secondary" onClick={handleExportPDF}>
+                      📑 Export PDF
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="ss-filters">
                   <input
                     type="text"
+                    className="ss-input"
                     placeholder="Search findings..."
                     value={findingFilter}
                     onChange={e => setFindingFilter(e.target.value)}
-                    style={{ background: '#222', color: '#eee', border: '1px solid #444', borderRadius: 4, padding: '6px 10px', minWidth: 180 }}
+                    style={{ minWidth: '200px' }}
                   />
-                  <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)} style={{ background: '#222', color: '#eee', border: '1px solid #444', borderRadius: 4, padding: '6px 10px' }}>
+                  <select 
+                    className="ss-select" 
+                    value={severityFilter} 
+                    onChange={e => setSeverityFilter(e.target.value)}
+                  >
                     <option value="">All Severities</option>
                     <option value="Critical">Critical</option>
                     <option value="High">High</option>
@@ -240,125 +333,240 @@ function App() {
                     <option value="Low">Low</option>
                     <option value="Info">Info</option>
                   </select>
-                  <select value={phaseFilter} onChange={e => setPhaseFilter(e.target.value)} style={{ background: '#222', color: '#eee', border: '1px solid #444', borderRadius: 4, padding: '6px 10px' }}>
+                  <select 
+                    className="ss-select" 
+                    value={phaseFilter} 
+                    onChange={e => setPhaseFilter(e.target.value)}
+                  >
                     <option value="">All Phases</option>
-                    {scanResult.PhaseResults.map((p, i) => <option key={i} value={p.PhaseName}>{p.PhaseName}</option>)}
+                    {scanResult.PhaseResults.map((p, i) => (
+                      <option key={i} value={p.PhaseName}>{p.PhaseName}</option>
+                    ))}
                   </select>
                 </div>
-                {/* Accordion for phases */}
+
+                {/* Phase Results */}
                 <div>
                   {scanResult.PhaseResults.map((phase, idx) => (
-                    <details key={idx} open={phase.PhaseName === 'LLMAnalysis' || !phase.Success} style={{ marginBottom: 12, border: '1px solid #333', borderRadius: 6, background: phase.PhaseName === 'LLMAnalysis' ? '#222a' : '#181818' }}>
-                      <summary style={{ fontWeight: 600, color: phase.Success ? '#8be9fd' : '#ff1744', cursor: 'pointer', padding: 6 }}>
-                        {phase.PhaseName} {phase.Success ? '✔️' : '❌'} ({filterFindings(phase.Findings).length} findings)
-                        {phase.Error && <span style={{ color: '#ff1744', marginLeft: 8 }}>Error: {phase.Error}</span>}
-                      </summary>
-                      {/* Findings table */}
-                      {filterFindings(phase.Findings).length > 0 && (
-                        <table style={{ width: '100%', marginTop: 8, fontSize: 14, borderCollapse: 'collapse' }}>
-                          <thead>
-                            <tr style={{ background: '#222' }}>
-                              <th style={{ textAlign: 'left', padding: 4 }}>Category</th>
-                              <th style={{ textAlign: 'left', padding: 4 }}>Description</th>
-                              <th style={{ textAlign: 'left', padding: 4 }}>Service</th>
-                              <th style={{ textAlign: 'left', padding: 4 }}>Port</th>
-                              <th style={{ textAlign: 'left', padding: 4 }}>Severity</th>
-                              <th style={{ textAlign: 'left', padding: 4 }}>Tool/Data</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filterFindings(phase.Findings).map((f, i) => (
-                              <tr key={i} style={{ background: i % 2 ? '#181818' : '#232323' }}>
-                                <td style={{ padding: 4 }}>{f.Category}</td>
-                                <td style={{ padding: 4 }}>{f.Description}</td>
-                                <td style={{ padding: 4 }}>{f.Service}</td>
-                                <td style={{ padding: 4 }}>{f.Port}</td>
-                                <td style={{ padding: 4, color: severityColor(f.Severity), fontWeight: 600 }}>{f.Severity}</td>
-                                <td style={{ padding: 4 }}>{Object.entries(f.Data || {}).map(([k, v]) => <div key={k}><b>{k}:</b> {v}</div>)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                      {/* Raw output for debugging */}
-                      {phase.RawOutput && (
-                        <details style={{ marginTop: 8 }}>
-                          <summary style={{ color: '#888', cursor: 'pointer' }}>Raw Output</summary>
-                          <pre style={{ background: '#111', color: '#eee', padding: 8, borderRadius: 4, maxHeight: 200, overflow: 'auto' }}>{phase.RawOutput}</pre>
-                        </details>
-                      )}
-                    </details>
+                    <div key={idx} className="ss-phase-card">
+                      <details open={phase.PhaseName === 'LLMAnalysis' || !phase.Success}>
+                        <summary className="ss-phase-summary">
+                          <div className="flex items-center gap-2">
+                            <span>{phase.Success ? '✅' : '❌'}</span>
+                            <span>{phase.PhaseName}</span>
+                            <span className="ss-status ok" style={{ fontSize: '0.75rem' }}>
+                              {filterFindings(phase.Findings).length} findings
+                            </span>
+                          </div>
+                          {phase.Error && (
+                            <span className="ss-error" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
+                              {phase.Error}
+                            </span>
+                          )}
+                        </summary>
+                        
+                        <div className="ss-phase-content">
+                          {filterFindings(phase.Findings).length > 0 && (
+                            <table className="ss-table">
+                              <thead>
+                                <tr>
+                                  <th>Category</th>
+                                  <th>Description</th>
+                                  <th>Service</th>
+                                  <th>Port</th>
+                                  <th>Severity</th>
+                                  <th>Details</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filterFindings(phase.Findings).map((finding, i) => (
+                                  <tr key={i}>
+                                    <td>{finding.Category}</td>
+                                    <td>{finding.Description}</td>
+                                    <td>{finding.Service}</td>
+                                    <td>{finding.Port || '-'}</td>
+                                    <td>
+                                      <span className={getSeverityClass(finding.Severity)}>
+                                        {finding.Severity}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      {Object.entries(finding.Data || {}).map(([k, v]) => (
+                                        <div key={k} style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                                          <strong>{k}:</strong> {v}
+                                        </div>
+                                      ))}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+
+                          {phase.RawOutput && (
+                            <details style={{ marginTop: '1rem' }}>
+                              <summary style={{ color: '#94a3b8', cursor: 'pointer', marginBottom: '0.5rem' }}>
+                                Raw Output
+                              </summary>
+                              <pre className="ss-code">{phase.RawOutput}</pre>
+                            </details>
+                          )}
+                        </div>
+                      </details>
+                    </div>
                   ))}
                 </div>
-                {/* LLM Analysis highlight */}
+
+                {/* LLM Analysis Highlight */}
                 {scanResult.PhaseResults.some(p => p.PhaseName === 'LLMAnalysis') && (
-                  <div style={{ background: '#0ff2', color: '#111', borderRadius: 8, padding: 16, marginTop: 18, boxShadow: '0 2px 8px #0ff4' }}>
-                    <h3 style={{ color: '#0ff', margin: 0 }}>LLM Recommendations</h3>
-                    <div style={{ whiteSpace: 'pre-wrap', fontSize: 16 }}>
-                      {scanResult.PhaseResults.find(p => p.PhaseName === 'LLMAnalysis')?.Findings[0]?.Description}
+                  <div className="ss-llm-analysis">
+                    <h3>🤖 AI Security Analysis</h3>
+                    <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                      {scanResult.PhaseResults.find(p => p.PhaseName === 'LLMAnalysis')?.Findings?.[0]?.Description}
                     </div>
                   </div>
                 )}
-                {/* Raw JSON fallback/debug */}
-                <details style={{ marginTop: 18 }}>
-                  <summary style={{ color: '#888', cursor: 'pointer' }}>Raw JSON Report</summary>
-                  <pre style={{ background: '#111', color: '#eee', padding: 8, borderRadius: 4, maxHeight: 300, overflow: 'auto' }}>{scanRaw}</pre>
+
+                {/* Raw JSON Debug */}
+                <details style={{ marginTop: '2rem' }}>
+                  <summary style={{ color: '#94a3b8', cursor: 'pointer' }}>
+                    Raw JSON Report (Debug)
+                  </summary>
+                  <pre className="ss-code" style={{ marginTop: '1rem' }}>{scanRaw}</pre>
                 </details>
               </div>
-            ) : scanError ? (
-              <div style={{ color: 'red', marginTop: 16 }}>Error: {scanError}</div>
-            ) : scanRaw ? (
-              <div style={{ color: 'red', marginTop: 16 }}>Scan failed or invalid report format.</div>
-            ) : null}
-          </div>
-        )}
-        {view === 'logs' && (
-          <div>
-            <h2>System Logs</h2>
-            <button onClick={fetchLogs} disabled={logsLoading} style={{ marginBottom: 8 }}>
-              {logsLoading ? 'Refreshing...' : 'Refresh Logs'}
-            </button>
-            {logsError && <div style={{ color: 'red' }}>Error: {logsError}</div>}
-            {logs && logs.length === 0 && <div>No logs found.</div>}
-            {logs && logs.length > 0 && (
-              <ul style={{ background: '#222', color: '#fff', padding: 10, maxHeight: 300, overflow: 'auto' }}>
-                {logs.map((log, i) => (
-                  <li key={i} style={{ marginBottom: 4 }}>{log}</li>
-                ))}
-              </ul>
             )}
           </div>
         )}
-        {view === 'status' && (
-          <div>
-            <h2>System Status</h2>
-            <button onClick={fetchStatus} disabled={statusLoading} style={{ marginBottom: 8 }}>
-              {statusLoading ? 'Refreshing...' : 'Refresh Status'}
+
+        {view === 'logs' && (
+          <div className="ss-card">
+            <h2>📋 System Logs</h2>
+            <button 
+              className="ss-button-secondary mb-3" 
+              onClick={fetchLogs} 
+              disabled={logsLoading}
+            >
+              {logsLoading ? (
+                <span className="ss-loading">
+                  <div className="ss-spinner"></div>
+                  Refreshing...
+                </span>
+              ) : (
+                '🔄 Refresh Logs'
+              )}
             </button>
-            <div>Backend API: <b style={{ color: backendStatus === 'ok' ? 'lime' : 'red' }}>{backendStatus}</b></div>
-            <div>LLM Service: <b style={{ color: llmStatus === 'ok' ? 'lime' : 'red' }}>{llmStatus}</b></div>
-            <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
-              (LLM service health is a placeholder; update port/path as needed)
+
+            {logsError && (
+              <div className="ss-error">
+                <strong>Error:</strong> {logsError}
+              </div>
+            )}
+
+            {logs && logs.length === 0 && (
+              <div className="text-center" style={{ color: '#94a3b8', padding: '2rem' }}>
+                No logs found.
+              </div>
+            )}
+
+            {logs && logs.length > 0 && (
+              <div className="ss-code" style={{ maxHeight: '400px', overflow: 'auto' }}>
+                {logs.map((log, i) => (
+                  <div key={i} style={{ marginBottom: '0.5rem', padding: '0.25rem 0' }}>
+                    <span style={{ color: '#00d4ff' }}>[{i + 1}]</span> {log}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {view === 'status' && (
+          <div className="ss-card">
+            <h2>⚡ System Status</h2>
+            <button 
+              className="ss-button-secondary mb-3" 
+              onClick={fetchStatus} 
+              disabled={statusLoading}
+            >
+              {statusLoading ? (
+                <span className="ss-loading">
+                  <div className="ss-spinner"></div>
+                  Checking...
+                </span>
+              ) : (
+                '🔄 Refresh Status'
+              )}
+            </button>
+
+            <div className="ss-feature-grid">
+              <div className="ss-feature-card">
+                <div className="ss-feature-icon">🔧</div>
+                <h3>Backend API</h3>
+                <div className={getStatusClass(backendStatus)}>
+                  {backendStatus === 'ok' && '✅ Online'}
+                  {backendStatus === 'down' && '❌ Offline'}
+                  {backendStatus === 'unknown' && '❓ Unknown'}
+                </div>
+              </div>
+              <div className="ss-feature-card">
+                <div className="ss-feature-icon">🤖</div>
+                <h3>LLM Service</h3>
+                <div className={getStatusClass(llmStatus)}>
+                  {llmStatus === 'ok' && '✅ Online'}
+                  {llmStatus === 'down' && '❌ Offline'}
+                  {llmStatus === 'unknown' && '❓ Unknown'}
+                </div>
+              </div>
             </div>
           </div>
         )}
+
         {view === 'llm' && (
-          <div>
-            <h2>LLM Threat Analysis</h2>
+          <div className="ss-card">
+            <h2>🤖 AI Threat Analysis</h2>
             <textarea
+              className="ss-input"
               value={llmInput}
               onChange={e => setLlmInput(e.target.value)}
-              placeholder="Paste suspicious text, logs, or threat data here..."
-              rows={6}
-              style={{ width: '100%', background: '#222', color: '#eee', border: '1px solid #444', borderRadius: 4, padding: 8, fontSize: '1rem', marginBottom: 8 }}
+              placeholder="Paste suspicious text, logs, or threat data here for AI analysis..."
+              rows={8}
+              style={{ 
+                width: '100%', 
+                minHeight: '200px', 
+                resize: 'vertical',
+                fontFamily: 'monospace'
+              }}
               disabled={llmLoading}
             />
-            <button onClick={handleLlmAnalyze} disabled={llmLoading || !llmInput}>
-              {llmLoading ? 'Analyzing...' : 'Analyze'}
+            <button 
+              className="ss-button mt-2" 
+              onClick={handleLlmAnalyze} 
+              disabled={llmLoading || !llmInput}
+            >
+              {llmLoading ? (
+                <span className="ss-loading">
+                  <div className="ss-spinner"></div>
+                  Analyzing...
+                </span>
+              ) : (
+                '🔍 Analyze with AI'
+              )}
             </button>
-            {llmError && <div style={{ color: 'red' }}>Error: {llmError}</div>}
+
+            {llmError && (
+              <div className="ss-error">
+                <strong>Error:</strong> {llmError}
+              </div>
+            )}
+
             {llmResult && (
-              <pre style={{ background: '#222', color: '#0ff', padding: 10, marginTop: 10, maxHeight: 300, overflow: 'auto' }}>{llmResult}</pre>
+              <div className="ss-llm-analysis">
+                <h3>Analysis Results</h3>
+                <pre style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#e0e6ed' }}>
+                  {llmResult}
+                </pre>
+              </div>
             )}
           </div>
         )}
