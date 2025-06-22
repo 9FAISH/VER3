@@ -195,31 +195,36 @@ function App() {
               className={`ss-nav-button ${view === 'dashboard' ? 'active' : ''}`}
               onClick={() => setView('dashboard')}
             >
-              🏠 Dashboard
+              <span className="nav-icon">🏠</span>
+              <span className="nav-text">Dashboard</span>
             </button>
             <button 
               className={`ss-nav-button ${view === 'scan' ? 'active' : ''}`}
               onClick={() => setView('scan')}
             >
-              🔍 Scan
+              <span className="nav-icon">🔍</span>
+              <span className="nav-text">Scan</span>
             </button>
             <button 
               className={`ss-nav-button ${view === 'logs' ? 'active' : ''}`}
               onClick={() => { setView('logs'); fetchLogs(); }}
             >
-              📋 Logs
+              <span className="nav-icon">📋</span>
+              <span className="nav-text">Logs</span>
             </button>
             <button 
               className={`ss-nav-button ${view === 'status' ? 'active' : ''}`}
               onClick={() => { setView('status'); fetchStatus(); }}
             >
-              ⚡ Status
+              <span className="nav-icon">⚡</span>
+              <span className="nav-text">Status</span>
             </button>
             <button 
               className={`ss-nav-button ${view === 'llm' ? 'active' : ''}`}
               onClick={() => setView('llm')}
             >
-              🤖 AI Analysis
+              <span className="nav-icon">🤖</span>
+              <span className="nav-text">AI Analysis</span>
             </button>
           </nav>
         </div>
@@ -278,7 +283,7 @@ function App() {
                 {scanLoading ? (
                   <span className="ss-loading">
                     <div className="ss-spinner"></div>
-                    Scanning...
+                    <span>Scanning...</span>
                   </span>
                 ) : (
                   'Start Scan'
@@ -294,14 +299,14 @@ function App() {
 
             {scanResult && Array.isArray(scanResult.PhaseResults) && (
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3" style={{ flexWrap: 'wrap', gap: '1rem' }}>
                   <div>
                     <h3 className="mb-1">Scan Report: <span style={{ color: '#00d4ff' }}>{scanResult.Target}</span></h3>
                     <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
                       Started: {new Date(scanResult.Timestamp).toLocaleString()}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="ss-actions">
                     <button className="ss-button-secondary" onClick={handleExportJSON}>
                       📄 Export JSON
                     </button>
@@ -319,7 +324,6 @@ function App() {
                     placeholder="Search findings..."
                     value={findingFilter}
                     onChange={e => setFindingFilter(e.target.value)}
-                    style={{ minWidth: '200px' }}
                   />
                   <select 
                     className="ss-select" 
@@ -351,7 +355,7 @@ function App() {
                     <div key={idx} className="ss-phase-card">
                       <details open={phase.PhaseName === 'LLMAnalysis' || !phase.Success}>
                         <summary className="ss-phase-summary">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
                             <span>{phase.Success ? '✅' : '❌'}</span>
                             <span>{phase.PhaseName}</span>
                             <span className="ss-status ok" style={{ fontSize: '0.75rem' }}>
@@ -367,40 +371,42 @@ function App() {
                         
                         <div className="ss-phase-content">
                           {filterFindings(phase.Findings).length > 0 && (
-                            <table className="ss-table">
-                              <thead>
-                                <tr>
-                                  <th>Category</th>
-                                  <th>Description</th>
-                                  <th>Service</th>
-                                  <th>Port</th>
-                                  <th>Severity</th>
-                                  <th>Details</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {filterFindings(phase.Findings).map((finding, i) => (
-                                  <tr key={i}>
-                                    <td>{finding.Category}</td>
-                                    <td>{finding.Description}</td>
-                                    <td>{finding.Service}</td>
-                                    <td>{finding.Port || '-'}</td>
-                                    <td>
-                                      <span className={getSeverityClass(finding.Severity)}>
-                                        {finding.Severity}
-                                      </span>
-                                    </td>
-                                    <td>
-                                      {Object.entries(finding.Data || {}).map(([k, v]) => (
-                                        <div key={k} style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                                          <strong>{k}:</strong> {v}
-                                        </div>
-                                      ))}
-                                    </td>
+                            <div className="ss-table-wrapper">
+                              <table className="ss-table">
+                                <thead>
+                                  <tr>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Service</th>
+                                    <th>Port</th>
+                                    <th>Severity</th>
+                                    <th>Details</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                                </thead>
+                                <tbody>
+                                  {filterFindings(phase.Findings).map((finding, i) => (
+                                    <tr key={i}>
+                                      <td>{finding.Category}</td>
+                                      <td style={{ maxWidth: '300px' }}>{finding.Description}</td>
+                                      <td>{finding.Service}</td>
+                                      <td>{finding.Port || '-'}</td>
+                                      <td>
+                                        <span className={getSeverityClass(finding.Severity)}>
+                                          {finding.Severity}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        {Object.entries(finding.Data || {}).map(([k, v]) => (
+                                          <div key={k} style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                                            <strong>{k}:</strong> {v}
+                                          </div>
+                                        ))}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           )}
 
                           {phase.RawOutput && (
@@ -450,7 +456,7 @@ function App() {
               {logsLoading ? (
                 <span className="ss-loading">
                   <div className="ss-spinner"></div>
-                  Refreshing...
+                  <span>Refreshing...</span>
                 </span>
               ) : (
                 '🔄 Refresh Logs'
@@ -492,7 +498,7 @@ function App() {
               {statusLoading ? (
                 <span className="ss-loading">
                   <div className="ss-spinner"></div>
-                  Checking...
+                  <span>Checking...</span>
                 </span>
               ) : (
                 '🔄 Refresh Status'
@@ -547,7 +553,7 @@ function App() {
               {llmLoading ? (
                 <span className="ss-loading">
                   <div className="ss-spinner"></div>
-                  Analyzing...
+                  <span>Analyzing...</span>
                 </span>
               ) : (
                 '🔍 Analyze with AI'
