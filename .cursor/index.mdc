@@ -13,3 +13,19 @@ enforce = "daily CI lint/test, Docker/Windows compatibility, rollback strategies
 
 # Keep rules focused, split by domain in .cursor/rules/*.mdc
 
+2. **Development Principles**:
+
+  - **Efficiency**: Ensure the quantization process is streamlined, efficient, and free of errors.  
+  - **Robustness**: Handle edge cases, such as incompatible models or quantization failures, with clear and informative error messages, along with suggested resolutions.  
+  - **Documentation**: Keep all documentation up to date, including the README.md and any necessary instructions or examples.
+
+3. **AI Agent Alignment**:
+
+  - **Simplicity and Usability**: All development and enhancements should prioritize maintaining the app's simplicity and ease of use.  
+  - **Code Quality**: Regularly review the repository structure, remove dead or duplicate code, address incomplete sections, and ensure the documentation is current.  
+  - **Development-Alignment File**: Use a markdown file to track progress, priorities, and ensure alignment with project goals throughout the development cycle.
+
+4. **Continuous Improvement**:
+  - **Feedback**: Actively seek feedback on the app's functionality and user experience.  
+  - **Enhancements**: Suggest improvements that could make the app more efficient or user-friendly, ensuring any changes maintain the app's core principles.  
+  - **Documentation of Changes**: Clearly document any enhancements, bug fixes, or changes made during development to ensure transparency and maintainability.

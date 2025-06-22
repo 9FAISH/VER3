@@ -15,7 +15,7 @@ interface Finding {
 }
 interface PhaseResult {
   PhaseName: string
-  Findings: Finding[]
+  Findings: Finding[] | null
   RawOutput: string
   Success: boolean
   Error: string
@@ -67,13 +67,21 @@ function App() {
       const text = await res.text()
       setScanRaw(text)
       let data: ScanReport | null = null
+      let warning: string | null = null
       try {
-        data = JSON.parse(text)
+        const parsed = JSON.parse(text)
+        if (parsed && parsed.PhaseResults && Array.isArray(parsed.PhaseResults)) {
+          data = parsed
+        } else if (parsed.result) {
+          // Backend returned a string result with a warning
+          warning = parsed.warning || null
+        }
       } catch (e) {
         // fallback: not a valid JSON
       }
       if (!res.ok) throw new Error((data as any)?.error || 'Scan failed')
       setScanResult(data)
+      if (warning) setScanError(warning)
     } catch (err: any) {
       setScanError(err.message)
     } finally {
@@ -167,7 +175,8 @@ function App() {
   }
 
   // Filtering logic
-  const filterFindings = (findings: Finding[]) => {
+  const filterFindings = (findings: Finding[] | null) => {
+    if (!findings) return []
     return findings.filter(f => {
       const matchesText = findingFilter === '' ||
         f.Description.toLowerCase().includes(findingFilter.toLowerCase()) ||

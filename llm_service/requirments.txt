@@ -1,3 +1,4 @@
-transformers
-langchain
-langchain-huggingface
+fastapi
+uvicorn
+llama-cpp-python
+huggingface-hub

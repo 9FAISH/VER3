@@ -6,6 +6,6 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	// TODO: Load config from file or environment
+	// NOTE: This is a stub. In production, load config from file or environment variables.
 	return &Config{ServerPort: ":8080"}, nil
 }

@@ -46,7 +46,13 @@ func ScanHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"result": result})
+	// Try to decode result as JSON
+	var obj interface{}
+	if err := json.Unmarshal([]byte(result), &obj); err == nil {
+		json.NewEncoder(w).Encode(obj)
+	} else {
+		json.NewEncoder(w).Encode(map[string]string{"result": result, "warning": "Scan result is not valid JSON"})
+	}
 }
 
 func LogsHandler(w http.ResponseWriter, r *http.Request) {
