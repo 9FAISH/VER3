@@ -18,6 +18,11 @@ body {
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+<<<<<<< HEAD
+=======
+  position: relative;
+  z-index: 1;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 /* Header styles */
@@ -58,6 +63,13 @@ body {
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: center;
+<<<<<<< HEAD
+=======
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #00d4ff #1a1a2e;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 .ss-nav-button {
@@ -66,14 +78,22 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 8px;
   padding: 0.75rem 1rem;
+<<<<<<< HEAD
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+=======
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.18s, border-color 0.18s;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
   position: relative;
   overflow: hidden;
   white-space: nowrap;
   min-width: fit-content;
+<<<<<<< HEAD
 }
 
 .ss-nav-button:hover {
@@ -88,11 +108,39 @@ body {
   background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 255, 136, 0.2) 100%);
   border-color: #00d4ff;
   color: #00d4ff;
+=======
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.08);
+  border-bottom: 2.5px solid transparent;
+}
+
+.ss-nav-button:focus {
+  border-color: #00ff88;
+  box-shadow: 0 0 0 3px #00ff8855;
+  z-index: 2;
+}
+
+.ss-nav-button:hover, .ss-nav-button:focus {
+  color: #00ff88;
+  border-color: #00ff88;
+  box-shadow: 0 4px 16px rgba(0,255,136,0.18);
+  border-bottom: 2.5px solid #00ff88;
+  outline: none;
+}
+
+.ss-nav-button.active {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 255, 136, 0.2) 100%);
+  border-color: #00ff88;
+  color: #00ff88;
+  border-bottom: 3.5px solid #00ff88;
+  box-shadow: 0 6px 24px rgba(0,255,136,0.18);
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 /* Main content */
 .ss-main {
   flex: 1;
+<<<<<<< HEAD
   max-width: 1400px;
   margin: 1rem auto;
   padding: 0 1rem;
@@ -107,6 +155,24 @@ body {
   padding: 1.5rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
   margin-bottom: 2rem;
+=======
+  width: 100vw;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0 2vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ss-card {
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto 2rem auto;
+  padding: 2rem 1.5rem;
+  border-radius: 18px;
+  box-sizing: border-box;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 .ss-card h2 {
@@ -273,6 +339,7 @@ body {
 
 /* Tables */
 .ss-table {
+<<<<<<< HEAD
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
@@ -280,11 +347,25 @@ body {
   border-radius: 8px;
   overflow: hidden;
   font-size: 0.875rem;
+=======
+  min-width: 700px;
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.ss-table th, .ss-table td {
+  padding: 0.85rem 0.5rem;
+  text-align: left;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 .ss-table th {
   background: rgba(30, 41, 59, 0.8);
   color: #cbd5e1;
+<<<<<<< HEAD
   padding: 0.75rem 0.5rem;
   text-align: left;
   font-weight: 600;
@@ -302,6 +383,14 @@ body {
 
 .ss-table tr:hover {
   background: rgba(30, 41, 59, 0.3);
+=======
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.ss-table tr:hover {
+  background: rgba(0, 212, 255, 0.05);
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 /* Table responsive wrapper */
@@ -310,18 +399,31 @@ body {
   margin: 1rem 0;
   border-radius: 8px;
   border: 1px solid rgba(148, 163, 184, 0.1);
+<<<<<<< HEAD
+=======
+  background: rgba(0,0,0,0.1);
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 /* Accordion/Details */
 .ss-phase-card {
+<<<<<<< HEAD
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 12px;
   margin-bottom: 1rem;
+=======
+  margin-bottom: 1.5rem;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(0, 212, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 212, 255, 0.05);
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
   overflow: hidden;
 }
 
 .ss-phase-summary {
+<<<<<<< HEAD
   padding: 1rem;
   cursor: pointer;
   display: flex;
@@ -340,6 +442,27 @@ body {
 .ss-phase-content {
   padding: 0 1rem 1rem;
   border-top: 1px solid rgba(148, 163, 184, 0.1);
+=======
+  padding: 1rem 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(30, 41, 59, 0.5);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.05);
+}
+
+.ss-phase-summary .ss-status {
+  margin-left: 0.5rem;
+}
+
+.ss-phase-content {
+  padding: 1rem 1.25rem 1.25rem 1.25rem;
+  background: rgba(15, 23, 42, 0.5);
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 /* Code/Pre blocks */
@@ -364,6 +487,7 @@ body {
 }
 
 .ss-spinner {
+<<<<<<< HEAD
   width: 16px;
   height: 16px;
   border: 2px solid rgba(0, 212, 255, 0.3);
@@ -371,6 +495,16 @@ body {
   border-radius: 50%;
   animation: spin 1s linear infinite;
   flex-shrink: 0;
+=======
+  display: inline-block;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 3px solid #00d4ff33;
+  border-top: 3px solid #00ff88;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 @keyframes spin {
@@ -453,6 +587,15 @@ body {
 
 /* Dashboard welcome */
 .ss-welcome {
+<<<<<<< HEAD
+=======
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
   text-align: center;
   padding: 2rem 1rem;
 }
@@ -475,6 +618,7 @@ body {
 }
 
 .ss-feature-grid {
+<<<<<<< HEAD
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
@@ -512,6 +656,61 @@ body {
   color: #94a3b8;
   font-size: 0.875rem;
   line-height: 1.5;
+=======
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto 2rem auto;
+  justify-items: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem;
+}
+
+.ss-feature-card {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1.5px solid rgba(0, 212, 255, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.08), 0 1.5px 8px rgba(0,0,0,0.12);
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.18s, border-color 0.18s, background 0.18s;
+  cursor: pointer;
+  min-height: 220px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ss-feature-card:hover, .ss-feature-card:focus {
+  transform: translateY(-8px) scale(1.04);
+  box-shadow: 0 16px 48px 0 rgba(0,255,136,0.18), 0 2px 12px rgba(0,212,255,0.18);
+  border-color: #00ff88;
+  background: linear-gradient(135deg, rgba(0,255,136,0.08) 0%, rgba(0,212,255,0.10) 100%);
+  outline: none;
+}
+
+.ss-feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #00d4ff;
+  filter: drop-shadow(0 0 6px #00d4ff33);
+}
+
+.ss-feature-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #00d4ff;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.ss-feature-card p {
+  color: #cbd5e1;
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 0;
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }
 
 /* Action buttons container */
@@ -769,4 +968,85 @@ body {
     margin: 0;
     padding: 0;
   }
+<<<<<<< HEAD
+=======
+}
+
+/* --- Responsive Tweaks --- */
+@media (max-width: 900px) {
+  .ss-main {
+    padding: 0 1vw;
+  }
+  .ss-feature-grid {
+    max-width: 98vw;
+  }
+  .ss-feature-card {
+    padding: 1.25rem 1rem 1rem 1rem;
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ss-main {
+    padding: 0 0.5vw;
+  }
+  .ss-feature-grid {
+    max-width: 100vw;
+  }
+  .ss-feature-card {
+    padding: 1rem 0.75rem;
+    min-height: 140px;
+  }
+  .ss-feature-icon {
+    font-size: 2rem;
+  }
+  .ss-header nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    padding: 0.5rem 0;
+    overflow-x: visible;
+  }
+  .ss-nav-button {
+    width: 100%;
+    text-align: left;
+    padding: 0.85rem 1.2rem;
+    font-size: 1.05rem;
+  }
+}
+
+/* --- Subtle Radial Gradient Overlay for Depth --- */
+.ss-root::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(0,255,136,0.08) 0, rgba(0,212,255,0.06) 40%, transparent 80%);
+}
+
+@media (max-width: 1100px) {
+  .ss-table {
+    min-width: 500px;
+    font-size: 0.85rem;
+  }
+  .ss-phase-summary, .ss-phase-content {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .ss-card {
+    padding: 1rem 0.5rem;
+  }
+  .ss-phase-summary, .ss-phase-content {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  .ss-table {
+    min-width: 350px;
+    font-size: 0.75rem;
+  }
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
 }

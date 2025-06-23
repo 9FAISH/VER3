@@ -1,0 +1,11 @@
+# Dirsearch started Mon Jun 23 09:52:42 2025 as: /usr/lib/python3/dist-packages/dirsearch/dirsearch.py -u http://127.0.0.1:8080 -e php,asp,aspx,js,html,txt,json,xml --format plain
+
+301    57B   http://127.0.0.1:8080/%2e%2e//google.com    -> REDIRECTS TO: /%252E%252E/google.com
+301    54B   http://127.0.0.1:8080/axis//happyaxis.jsp    -> REDIRECTS TO: /axis/happyaxis.jsp
+301    59B   http://127.0.0.1:8080/axis2-web//HappyAxis.jsp    -> REDIRECTS TO: /axis2-web/HappyAxis.jsp
+301    65B   http://127.0.0.1:8080/axis2//axis2-web/HappyAxis.jsp    -> REDIRECTS TO: /axis2/axis2-web/HappyAxis.jsp
+301    87B   http://127.0.0.1:8080/Citrix//AccessPlatform/auth/clientscripts/cookies.js    -> REDIRECTS TO: /Citrix/AccessPlatform/auth/clientscripts/cookies.js
+301    74B   http://127.0.0.1:8080/engine/classes/swfupload//swfupload.swf    -> REDIRECTS TO: /engine/classes/swfupload/swfupload.swf
+301    77B   http://127.0.0.1:8080/engine/classes/swfupload//swfupload_f9.swf    -> REDIRECTS TO: /engine/classes/swfupload/swfupload_f9.swf
+301    62B   http://127.0.0.1:8080/extjs/resources//charts.swf    -> REDIRECTS TO: /extjs/resources/charts.swf
+301    72B   http://127.0.0.1:8080/html/js/misc/swfupload//swfupload.swf    -> REDIRECTS TO: /html/js/misc/swfupload/swfupload.swf

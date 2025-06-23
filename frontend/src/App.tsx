@@ -26,6 +26,20 @@ interface ScanReport {
   LLMAnalysis: string
 }
 
+// Utility: Parse log string to object { timestamp, type, message }
+function parseLog(log: string) {
+  // Example log: "2024-05-01 12:34:56 [ERROR] Something failed"
+  const match = log.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(INFO|WARNING|ERROR)\] (.*)$/i)
+  if (match) {
+    return {
+      timestamp: match[1],
+      type: match[2].toLowerCase(),
+      message: match[3],
+    }
+  }
+  return { timestamp: '', type: 'info', message: log }
+}
+
 function App() {
   const [view, setView] = useState<'dashboard' | 'scan' | 'logs' | 'status' | 'llm'>('dashboard')
   // Scan UI state
@@ -38,6 +52,30 @@ function App() {
   const [logs, setLogs] = useState<string[] | null>(null)
   const [logsLoading, setLogsLoading] = useState(false)
   const [logsError, setLogsError] = useState<string | null>(null)
+  // Logs table state
+  const [logSearch, setLogSearch] = useState('')
+  const [logTypeFilter, setLogTypeFilter] = useState('')
+  const [logPage, setLogPage] = useState(1)
+  const logsPerPage = 12
+  // Derived: parsed, filtered, searched logs
+  const parsedLogs = (logs || []).map(parseLog)
+  const filteredLogs = parsedLogs.filter(l =>
+    (!logTypeFilter || l.type === logTypeFilter) &&
+    (logSearch === '' || l.message.toLowerCase().includes(logSearch.toLowerCase()))
+  )
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / logsPerPage))
+  const paginatedLogs = filteredLogs.slice((logPage-1)*logsPerPage, logPage*logsPerPage)
+  // Icon and color for log type
+  const logTypeIcon = (type: string) => {
+    if (type === 'error') return <span style={{color:'#ef4444'}} title="Error">⛔</span>
+    if (type === 'warning') return <span style={{color:'#f59e0b'}} title="Warning">⚠️</span>
+    return <span style={{color:'#00d4ff'}} title="Info">ℹ️</span>
+  }
+  const logTypeClass = (type: string) => {
+    if (type === 'error') return 'ss-severity critical'
+    if (type === 'warning') return 'ss-severity high'
+    return 'ss-severity info'
+  }
   // Status UI state
   const [backendStatus, setBackendStatus] = useState<'unknown' | 'ok' | 'down'>('unknown')
   const [llmStatus, setLlmStatus] = useState<'unknown' | 'ok' | 'down'>('unknown')
@@ -190,6 +228,7 @@ function App() {
       <header className="ss-header">
         <div className="ss-header-content">
           <h1>SentinelSecure</h1>
+<<<<<<< HEAD
           <nav>
             <button 
               className={`ss-nav-button ${view === 'dashboard' ? 'active' : ''}`}
@@ -313,6 +352,141 @@ function App() {
                     <button className="ss-button-secondary" onClick={handleExportPDF}>
                       📑 Export PDF
                     </button>
+=======
+          <nav aria-label="Main navigation" role="navigation">
+            <button 
+              className={`ss-nav-button ${view === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setView('dashboard')}
+              aria-current={view === 'dashboard' ? 'page' : undefined}
+              tabIndex={0}
+            >
+              <span className="nav-icon" aria-hidden="true">🏠</span>
+              <span className="nav-text">Dashboard</span>
+            </button>
+            <button 
+              className={`ss-nav-button ${view === 'scan' ? 'active' : ''}`}
+              onClick={() => setView('scan')}
+              aria-current={view === 'scan' ? 'page' : undefined}
+              tabIndex={0}
+            >
+              <span className="nav-icon" aria-hidden="true">🔍</span>
+              <span className="nav-text">Scan</span>
+            </button>
+            <button 
+              className={`ss-nav-button ${view === 'logs' ? 'active' : ''}`}
+              onClick={() => setView('logs')}
+              aria-current={view === 'logs' ? 'page' : undefined}
+              tabIndex={0}
+            >
+              <span className="nav-icon" aria-hidden="true">📋</span>
+              <span className="nav-text">Logs</span>
+            </button>
+            <button 
+              className={`ss-nav-button ${view === 'status' ? 'active' : ''}`}
+              onClick={() => setView('status')}
+              aria-current={view === 'status' ? 'page' : undefined}
+              tabIndex={0}
+            >
+              <span className="nav-icon" aria-hidden="true">⚡</span>
+              <span className="nav-text">Status</span>
+            </button>
+            <button 
+              className={`ss-nav-button ${view === 'llm' ? 'active' : ''}`}
+              onClick={() => setView('llm')}
+              aria-current={view === 'llm' ? 'page' : undefined}
+              tabIndex={0}
+            >
+              <span className="nav-icon" aria-hidden="true">🤖</span>
+              <span className="nav-text">AI Analysis</span>
+            </button>
+        </nav>
+        </div>
+      </header>
+
+      <main className="ss-main" id="main-content">
+        {view === 'dashboard' && (
+          <section className="ss-welcome" aria-labelledby="welcome-heading">
+            <h2 id="welcome-heading">Welcome to SentinelSecure</h2>
+            <p>
+              Advanced cybersecurity scanning platform powered by AI. 
+              Discover vulnerabilities, analyze threats, and secure your infrastructure.
+            </p>
+            <div className="ss-feature-grid" role="list">
+              <div className="ss-feature-card" tabIndex={0} role="listitem" aria-label="Network Scanning: Comprehensive vulnerability assessment and network reconnaissance">
+                <span className="ss-feature-icon" aria-hidden="true">🔍</span>
+                <h3>Network Scanning</h3>
+                <p>Comprehensive vulnerability assessment and network reconnaissance</p>
+              </div>
+              <div className="ss-feature-card" tabIndex={0} role="listitem" aria-label="AI Analysis: Intelligent threat analysis powered by advanced language models">
+                <span className="ss-feature-icon" aria-hidden="true">🤖</span>
+                <h3>AI Analysis</h3>
+                <p>Intelligent threat analysis powered by advanced language models</p>
+              </div>
+              <div className="ss-feature-card" tabIndex={0} role="listitem" aria-label="System Status: Monitor service health and system performance in real-time">
+                <span className="ss-feature-icon" aria-hidden="true">⚡</span>
+                <h3>System Status</h3>
+                <p>Monitor service health and system performance in real-time</p>
+              </div>
+              <div className="ss-feature-card" tabIndex={0} role="listitem" aria-label="Activity Logs: Track system activities and security events">
+                <span className="ss-feature-icon" aria-hidden="true">📋</span>
+                <h3>Activity Logs</h3>
+                <p>Track system activities and security events</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {view === 'scan' && (
+          <div className="ss-card">
+            <h2>🔍 Vulnerability Scanner</h2>
+            <div className="ss-input-group">
+            <input
+              type="text"
+                className="ss-input"
+              value={scanTarget}
+              onChange={e => setScanTarget(e.target.value)}
+                placeholder="Enter target IP or hostname"
+              disabled={scanLoading}
+            />
+              <button 
+                className="ss-button" 
+                onClick={handleScan} 
+                disabled={scanLoading || !scanTarget}
+              >
+                {scanLoading ? (
+                  <span className="ss-loading">
+                    <div className="ss-spinner"></div>
+                    <span>Scanning...</span>
+                  </span>
+                ) : (
+                  'Start Scan'
+                )}
+              </button>
+            </div>
+
+            {scanError && (
+              <div className="ss-error">
+                <strong>Error:</strong> {scanError}
+              </div>
+            )}
+
+            {scanResult && Array.isArray(scanResult.PhaseResults) && (
+              <div>
+                <div className="flex items-center justify-between mb-3" style={{ flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h3 className="mb-1">Scan Report: <span style={{ color: '#00d4ff' }}>{scanResult.Target}</span></h3>
+                    <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
+                      Started: {new Date(scanResult.Timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="ss-actions">
+                    <button className="ss-button-secondary" onClick={handleExportJSON}>
+                      📄 Export JSON
+                    </button>
+                    <button className="ss-button-secondary" onClick={handleExportPDF}>
+                      📑 Export PDF
+            </button>
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                   </div>
                 </div>
 
@@ -359,7 +533,11 @@ function App() {
                             <span>{phase.Success ? '✅' : '❌'}</span>
                             <span>{phase.PhaseName}</span>
                             <span className="ss-status ok" style={{ fontSize: '0.75rem' }}>
+<<<<<<< HEAD
                               {filterFindings(phase.Findings).length} findings
+=======
+                              {phase.Findings && phase.Findings.length} findings
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                             </span>
                           </div>
                           {phase.Error && (
@@ -367,6 +545,7 @@ function App() {
                               {phase.Error}
                             </span>
                           )}
+<<<<<<< HEAD
                         </summary>
                         
                         <div className="ss-phase-content">
@@ -374,6 +553,17 @@ function App() {
                             <div className="ss-table-wrapper">
                               <table className="ss-table">
                                 <thead>
+=======
+                      </summary>
+                        <div className="ss-phase-content">
+                          {(!phase.Findings || phase.Findings.length === 0) && (
+                            <div style={{ color: '#94a3b8', padding: '1rem 0' }}>No findings for this phase.</div>
+                          )}
+                          {phase.Findings && phase.Findings.length > 0 && (
+                            <div className="ss-table-wrapper">
+                              <table className="ss-table">
+                          <thead>
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                                   <tr>
                                     <th>Category</th>
                                     <th>Description</th>
@@ -381,6 +571,7 @@ function App() {
                                     <th>Port</th>
                                     <th>Severity</th>
                                     <th>Details</th>
+<<<<<<< HEAD
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -410,15 +601,94 @@ function App() {
                           )}
 
                           {phase.RawOutput && (
+=======
+                            </tr>
+                          </thead>
+                          <tbody>
+                                  {phase.Findings.map((finding, i) => {
+                                    // Helper to check if output is long
+                                    const isLong = (str: string) => str && str.length > 200;
+                                    // Truncate helper
+                                    const truncate = (str: string) => str && str.length > 200 ? str.slice(0, 200) + '...' : str;
+                                    // For details, show only first key/value if long, else all
+                                    const detailsKeys = finding.Data ? Object.keys(finding.Data) : [];
+                                    return (
+                                      <tr key={i}>
+                                        <td>{finding.Category}</td>
+                                        <td>
+                                          {isLong(finding.Description) ? (
+                                            <>
+                                              {truncate(finding.Description)}
+                                              <details style={{ marginTop: '0.5rem' }}>
+                                                <summary style={{ color: '#00d4ff', cursor: 'pointer' }}>View Full Output</summary>
+                                                <pre className="ss-code" style={{ whiteSpace: 'pre-wrap', marginTop: '0.5rem' }}>{finding.Description}</pre>
+                                              </details>
+                                            </>
+                                          ) : (
+                                            finding.Description
+                                          )}
+                                        </td>
+                                        <td>{finding.Service}</td>
+                                        <td>{finding.Port || '-'}</td>
+                                        <td>
+                                          <span className={getSeverityClass(finding.Severity)}>
+                                            {finding.Severity}
+                                          </span>
+                                        </td>
+                                        <td>
+                                          {detailsKeys.length === 0 ? (
+                                            <span style={{ color: '#64748b' }}>-</span>
+                                          ) : (
+                                            detailsKeys.map((k, idx) => {
+                                              const v = finding.Data[k];
+                                              return isLong(v) ? (
+                                                <div key={k} style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                                                  <strong>{k}:</strong> {truncate(v)}
+                                                  <details style={{ marginTop: '0.25rem' }}>
+                                                    <summary style={{ color: '#00d4ff', cursor: 'pointer' }}>View Full Output</summary>
+                                                    <pre className="ss-code" style={{ whiteSpace: 'pre-wrap', marginTop: '0.25rem' }}>{v}</pre>
+                                                  </details>
+                                                </div>
+                                              ) : (
+                                                <div key={k} style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                                                  <strong>{k}:</strong> {v}
+                                                </div>
+                                              );
+                                            })
+                                          )}
+                                        </td>
+                              </tr>
+                                    );
+                                  })}
+                          </tbody>
+                        </table>
+                            </div>
+                          )}
+                          {/* Show tool errors or important raw output if present */}
+                          {phase.RawOutput && phase.RawOutput.toLowerCase().includes('not found') && (
+                            <div className="ss-error" style={{ marginTop: '1rem', fontSize: '0.95rem' }}>
+                              {phase.RawOutput}
+                            </div>
+                          )}
+                          {/* Optionally, show raw output toggle for advanced users */}
+                          {phase.RawOutput && !phase.RawOutput.toLowerCase().includes('not found') && (
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                             <details style={{ marginTop: '1rem' }}>
                               <summary style={{ color: '#94a3b8', cursor: 'pointer', marginBottom: '0.5rem' }}>
                                 Raw Output
                               </summary>
                               <pre className="ss-code">{phase.RawOutput}</pre>
+<<<<<<< HEAD
                             </details>
                           )}
                         </div>
                       </details>
+=======
+                        </details>
+                      )}
+                        </div>
+                    </details>
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                     </div>
                   ))}
                 </div>
@@ -448,6 +718,7 @@ function App() {
         {view === 'logs' && (
           <div className="ss-card">
             <h2>📋 System Logs</h2>
+<<<<<<< HEAD
             <button 
               className="ss-button-secondary mb-3" 
               onClick={fetchLogs} 
@@ -463,17 +734,61 @@ function App() {
               )}
             </button>
 
+=======
+            <div className="ss-input-group" style={{marginBottom:'1rem', flexWrap:'wrap', gap:'0.5rem'}}>
+              <input
+                className="ss-input"
+                type="text"
+                placeholder="Search logs..."
+                value={logSearch}
+                onChange={e => { setLogSearch(e.target.value); setLogPage(1); }}
+                style={{minWidth:'180px'}}
+                disabled={logsLoading}
+              />
+              <select
+                className="ss-select"
+                value={logTypeFilter}
+                onChange={e => { setLogTypeFilter(e.target.value); setLogPage(1); }}
+                disabled={logsLoading}
+                style={{minWidth:'140px'}}
+              >
+                <option value="">All Types</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+              </select>
+              <button 
+                className="ss-button-secondary"
+                onClick={fetchLogs}
+                disabled={logsLoading}
+                style={{marginLeft:'auto'}}
+              >
+                {logsLoading ? (
+                  <span className="ss-loading">
+                    <div className="ss-spinner"></div>
+                    <span>Refreshing...</span>
+                  </span>
+                ) : (
+                  '🔄 Refresh Logs'
+                )}
+            </button>
+            </div>
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
             {logsError && (
               <div className="ss-error">
                 <strong>Error:</strong> {logsError}
               </div>
             )}
+<<<<<<< HEAD
 
+=======
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
             {logs && logs.length === 0 && (
               <div className="text-center" style={{ color: '#94a3b8', padding: '2rem' }}>
                 No logs found.
               </div>
             )}
+<<<<<<< HEAD
 
             {logs && logs.length > 0 && (
               <div className="ss-code" style={{ maxHeight: '400px', overflow: 'auto' }}>
@@ -482,6 +797,36 @@ function App() {
                     <span style={{ color: '#00d4ff' }}>[{i + 1}]</span> {log}
                   </div>
                 ))}
+=======
+            {logs && logs.length > 0 && (
+              <div className="ss-table-wrapper">
+                <table className="ss-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Timestamp</th>
+                      <th>Type</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedLogs.map((log, i) => (
+                      <tr key={i}>
+                        <td>{logTypeIcon(log.type)}</td>
+                        <td style={{whiteSpace:'nowrap',color:'#94a3b8'}}>{log.timestamp}</td>
+                        <td><span className={logTypeClass(log.type)}>{log.type.toUpperCase()}</span></td>
+                        <td style={{maxWidth:'480px',wordBreak:'break-word'}}>{log.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {/* Pagination controls */}
+                <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:'1rem',margin:'1rem 0'}}>
+                  <button className="ss-button-secondary" onClick={()=>setLogPage(p=>Math.max(1,p-1))} disabled={logPage===1}>Prev</button>
+                  <span style={{color:'#00d4ff'}}>Page {logPage} of {totalPages}</span>
+                  <button className="ss-button-secondary" onClick={()=>setLogPage(p=>Math.min(totalPages,p+1))} disabled={logPage===totalPages}>Next</button>
+                </div>
+>>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
               </div>
             )}
           </div>

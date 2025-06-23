@@ -1,0 +1,7 @@
+# Dirsearch started Mon Jun 23 09:52:17 2025 as: /usr/lib/python3/dist-packages/dirsearch/dirsearch.py -u http://127.0.0.1:8000 -e php,asp,aspx,js,html,txt,json,xml --format plain
+
+307     0B   http://127.0.0.1:8000/docs/    -> REDIRECTS TO: http://127.0.0.1:8000/docs
+200   931B   http://127.0.0.1:8000/docs
+200    15B   http://127.0.0.1:8000/health
+200     1KB  http://127.0.0.1:8000/openapi.json
+200   888B   http://127.0.0.1:8000/redoc
