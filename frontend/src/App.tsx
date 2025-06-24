@@ -41,7 +41,8 @@ function parseLog(log: string) {
 }
 
 function App() {
-  const [view, setView] = useState<'dashboard' | 'scan' | 'logs' | 'status' | 'llm'>('dashboard')
+  const [view, setView] = useState<'dashboard' | 'scan' | 'logs' | 'status'>('dashboard')
+  const [navOpen, setNavOpen] = useState(false)
   // Scan UI state
   const [scanTarget, setScanTarget] = useState('127.0.0.1')
   const [scanResult, setScanResult] = useState<ScanReport | null>(null)
@@ -78,17 +79,7 @@ function App() {
   }
   // Status UI state
   const [backendStatus, setBackendStatus] = useState<'unknown' | 'ok' | 'down'>('unknown')
-  const [llmStatus, setLlmStatus] = useState<'unknown' | 'ok' | 'down'>('unknown')
   const [statusLoading, setStatusLoading] = useState(false)
-  // LLM Analysis UI state
-  const [llmInput, setLlmInput] = useState('')
-  const [llmResult, setLlmResult] = useState<string | null>(null)
-  const [llmLoading, setLlmLoading] = useState(false)
-  const [llmError, setLlmError] = useState<string | null>(null)
-  // Filtering/search state
-  const [findingFilter, setFindingFilter] = useState('')
-  const [severityFilter, setSeverityFilter] = useState<string>('')
-  const [phaseFilter, setPhaseFilter] = useState<string>('')
 
   const handleScan = async () => {
     setScanLoading(true)
@@ -145,7 +136,6 @@ function App() {
   const fetchStatus = async () => {
     setStatusLoading(true)
     setBackendStatus('unknown')
-    setLlmStatus('unknown')
     try {
       // Backend health
       const backendRes = await fetch('http://localhost:8080/api/health')
@@ -153,74 +143,7 @@ function App() {
     } catch {
       setBackendStatus('down')
     }
-    try {
-      // LLM service health
-      const llmRes = await fetch('http://localhost:8000/health')
-      setLlmStatus(llmRes.ok ? 'ok' : 'down')
-    } catch {
-      setLlmStatus('down')
-    }
     setStatusLoading(false)
-  }
-
-  const handleLlmAnalyze = async () => {
-    setLlmLoading(true)
-    setLlmError(null)
-    setLlmResult(null)
-    try {
-      const res = await fetch('http://localhost:8000/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: llmInput })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'LLM analysis failed')
-      setLlmResult(data.result)
-    } catch (err: any) {
-      setLlmError(err.message)
-    } finally {
-      setLlmLoading(false)
-    }
-  }
-
-  // Export as JSON
-  const handleExportJSON = () => {
-    if (!scanResult) return
-    const blob = new Blob([JSON.stringify(scanResult, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `sentinelsecure_report_${scanResult.Target || 'scan'}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  // Export as PDF (stub)
-  const handleExportPDF = () => {
-    alert('PDF export coming soon!')
-  }
-
-  // Filtering logic
-  const filterFindings = (findings: Finding[] | null) => {
-    if (!findings) return []
-    return findings.filter(f => {
-      const matchesText = findingFilter === '' ||
-        f.Description.toLowerCase().includes(findingFilter.toLowerCase()) ||
-        f.Category.toLowerCase().includes(findingFilter.toLowerCase()) ||
-        f.Service.toLowerCase().includes(findingFilter.toLowerCase()) ||
-        Object.values(f.Data || {}).some(v => v.toLowerCase().includes(findingFilter.toLowerCase()))
-      const matchesSeverity = !severityFilter || f.Severity.toLowerCase() === severityFilter.toLowerCase()
-      const matchesPhase = !phaseFilter || f.Phase.toLowerCase() === phaseFilter.toLowerCase()
-      return matchesText && matchesSeverity && matchesPhase
-    })
-  }
-
-  const getSeverityClass = (severity: string) => {
-    return `ss-severity ${severity.toLowerCase()}`
-  }
-
-  const getStatusClass = (status: string) => {
-    return `ss-status ${status}`
   }
 
   return (
@@ -228,135 +151,35 @@ function App() {
       <header className="ss-header">
         <div className="ss-header-content">
           <h1>SentinelSecure</h1>
-<<<<<<< HEAD
-          <nav>
+          {/* Hamburger for mobile */}
+          <button
+            className="ss-hamburger"
+            aria-label={navOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={navOpen}
+            aria-controls="main-nav"
+            onClick={() => setNavOpen(v => !v)}
+            style={{ display: 'none' }}
+          >
+            <span className="ss-hamburger-bar"></span>
+            <span className="ss-hamburger-bar"></span>
+            <span className="ss-hamburger-bar"></span>
+          </button>
+          <nav
+            id="main-nav"
+            aria-label="Main navigation"
+            role="navigation"
+            className={navOpen ? 'open' : ''}
+          >
             <button 
               className={`ss-nav-button ${view === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setView('dashboard')}
-            >
-              <span className="nav-icon">🏠</span>
-              <span className="nav-text">Dashboard</span>
-            </button>
-            <button 
-              className={`ss-nav-button ${view === 'scan' ? 'active' : ''}`}
-              onClick={() => setView('scan')}
-            >
-              <span className="nav-icon">🔍</span>
-              <span className="nav-text">Scan</span>
-            </button>
-            <button 
-              className={`ss-nav-button ${view === 'logs' ? 'active' : ''}`}
-              onClick={() => { setView('logs'); fetchLogs(); }}
-            >
-              <span className="nav-icon">📋</span>
-              <span className="nav-text">Logs</span>
-            </button>
-            <button 
-              className={`ss-nav-button ${view === 'status' ? 'active' : ''}`}
-              onClick={() => { setView('status'); fetchStatus(); }}
-            >
-              <span className="nav-icon">⚡</span>
-              <span className="nav-text">Status</span>
-            </button>
-            <button 
-              className={`ss-nav-button ${view === 'llm' ? 'active' : ''}`}
-              onClick={() => setView('llm')}
-            >
-              <span className="nav-icon">🤖</span>
-              <span className="nav-text">AI Analysis</span>
-            </button>
-          </nav>
-        </div>
-      </header>
-
-      <main className="ss-main">
-        {view === 'dashboard' && (
-          <div className="ss-welcome">
-            <h2>Welcome to SentinelSecure</h2>
-            <p>
-              Advanced cybersecurity scanning platform powered by AI. 
-              Discover vulnerabilities, analyze threats, and secure your infrastructure.
-            </p>
-            <div className="ss-feature-grid">
-              <div className="ss-feature-card" onClick={() => setView('scan')}>
-                <div className="ss-feature-icon">🔍</div>
-                <h3>Network Scanning</h3>
-                <p>Comprehensive vulnerability assessment and network reconnaissance</p>
-              </div>
-              <div className="ss-feature-card" onClick={() => setView('llm')}>
-                <div className="ss-feature-icon">🤖</div>
-                <h3>AI Analysis</h3>
-                <p>Intelligent threat analysis powered by advanced language models</p>
-              </div>
-              <div className="ss-feature-card" onClick={() => setView('status')}>
-                <div className="ss-feature-icon">⚡</div>
-                <h3>System Status</h3>
-                <p>Monitor service health and system performance in real-time</p>
-              </div>
-              <div className="ss-feature-card" onClick={() => setView('logs')}>
-                <div className="ss-feature-icon">📋</div>
-                <h3>Activity Logs</h3>
-                <p>Track system activities and security events</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {view === 'scan' && (
-          <div className="ss-card">
-            <h2>🔍 Vulnerability Scanner</h2>
-            <div className="ss-input-group">
-              <input
-                type="text"
-                className="ss-input"
-                value={scanTarget}
-                onChange={e => setScanTarget(e.target.value)}
-                placeholder="Enter target IP or hostname"
-                disabled={scanLoading}
-              />
-              <button 
-                className="ss-button" 
-                onClick={handleScan} 
-                disabled={scanLoading || !scanTarget}
-              >
-                {scanLoading ? (
-                  <span className="ss-loading">
-                    <div className="ss-spinner"></div>
-                    <span>Scanning...</span>
-                  </span>
-                ) : (
-                  'Start Scan'
-                )}
-              </button>
-            </div>
-
-            {scanError && (
-              <div className="ss-error">
-                <strong>Error:</strong> {scanError}
-              </div>
-            )}
-
-            {scanResult && Array.isArray(scanResult.PhaseResults) && (
-              <div>
-                <div className="flex items-center justify-between mb-3" style={{ flexWrap: 'wrap', gap: '1rem' }}>
-                  <div>
-                    <h3 className="mb-1">Scan Report: <span style={{ color: '#00d4ff' }}>{scanResult.Target}</span></h3>
-                    <div style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
-                      Started: {new Date(scanResult.Timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="ss-actions">
-                    <button className="ss-button-secondary" onClick={handleExportJSON}>
-                      📄 Export JSON
-                    </button>
-                    <button className="ss-button-secondary" onClick={handleExportPDF}>
-                      📑 Export PDF
-                    </button>
-=======
-          <nav aria-label="Main navigation" role="navigation">
-            <button 
-              className={`ss-nav-button ${view === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setView('dashboard')}
+              onMouseDown={() => {
+                setView('dashboard');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
+              onTouchStart={() => {
+                setView('dashboard');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
               aria-current={view === 'dashboard' ? 'page' : undefined}
               tabIndex={0}
             >
@@ -365,7 +188,14 @@ function App() {
             </button>
             <button 
               className={`ss-nav-button ${view === 'scan' ? 'active' : ''}`}
-              onClick={() => setView('scan')}
+              onMouseDown={() => {
+                setView('scan');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
+              onTouchStart={() => {
+                setView('scan');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
               aria-current={view === 'scan' ? 'page' : undefined}
               tabIndex={0}
             >
@@ -374,7 +204,14 @@ function App() {
             </button>
             <button 
               className={`ss-nav-button ${view === 'logs' ? 'active' : ''}`}
-              onClick={() => setView('logs')}
+              onMouseDown={() => {
+                setView('logs');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
+              onTouchStart={() => {
+                setView('logs');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
               aria-current={view === 'logs' ? 'page' : undefined}
               tabIndex={0}
             >
@@ -383,23 +220,21 @@ function App() {
             </button>
             <button 
               className={`ss-nav-button ${view === 'status' ? 'active' : ''}`}
-              onClick={() => setView('status')}
+              onMouseDown={() => {
+                setView('status');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
+              onTouchStart={() => {
+                setView('status');
+                if (window.innerWidth <= 768) setNavOpen(false);
+              }}
               aria-current={view === 'status' ? 'page' : undefined}
               tabIndex={0}
             >
               <span className="nav-icon" aria-hidden="true">⚡</span>
               <span className="nav-text">Status</span>
             </button>
-            <button 
-              className={`ss-nav-button ${view === 'llm' ? 'active' : ''}`}
-              onClick={() => setView('llm')}
-              aria-current={view === 'llm' ? 'page' : undefined}
-              tabIndex={0}
-            >
-              <span className="nav-icon" aria-hidden="true">🤖</span>
-              <span className="nav-text">AI Analysis</span>
-            </button>
-        </nav>
+          </nav>
         </div>
       </header>
 
@@ -416,11 +251,6 @@ function App() {
                 <span className="ss-feature-icon" aria-hidden="true">🔍</span>
                 <h3>Network Scanning</h3>
                 <p>Comprehensive vulnerability assessment and network reconnaissance</p>
-              </div>
-              <div className="ss-feature-card" tabIndex={0} role="listitem" aria-label="AI Analysis: Intelligent threat analysis powered by advanced language models">
-                <span className="ss-feature-icon" aria-hidden="true">🤖</span>
-                <h3>AI Analysis</h3>
-                <p>Intelligent threat analysis powered by advanced language models</p>
               </div>
               <div className="ss-feature-card" tabIndex={0} role="listitem" aria-label="System Status: Monitor service health and system performance in real-time">
                 <span className="ss-feature-icon" aria-hidden="true">⚡</span>
@@ -486,7 +316,6 @@ function App() {
                     <button className="ss-button-secondary" onClick={handleExportPDF}>
                       📑 Export PDF
             </button>
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                   </div>
                 </div>
 
@@ -533,11 +362,7 @@ function App() {
                             <span>{phase.Success ? '✅' : '❌'}</span>
                             <span>{phase.PhaseName}</span>
                             <span className="ss-status ok" style={{ fontSize: '0.75rem' }}>
-<<<<<<< HEAD
-                              {filterFindings(phase.Findings).length} findings
-=======
                               {phase.Findings && phase.Findings.length} findings
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                             </span>
                           </div>
                           {phase.Error && (
@@ -545,15 +370,6 @@ function App() {
                               {phase.Error}
                             </span>
                           )}
-<<<<<<< HEAD
-                        </summary>
-                        
-                        <div className="ss-phase-content">
-                          {filterFindings(phase.Findings).length > 0 && (
-                            <div className="ss-table-wrapper">
-                              <table className="ss-table">
-                                <thead>
-=======
                       </summary>
                         <div className="ss-phase-content">
                           {(!phase.Findings || phase.Findings.length === 0) && (
@@ -563,7 +379,6 @@ function App() {
                             <div className="ss-table-wrapper">
                               <table className="ss-table">
                           <thead>
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                                   <tr>
                                     <th>Category</th>
                                     <th>Description</th>
@@ -571,37 +386,6 @@ function App() {
                                     <th>Port</th>
                                     <th>Severity</th>
                                     <th>Details</th>
-<<<<<<< HEAD
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {filterFindings(phase.Findings).map((finding, i) => (
-                                    <tr key={i}>
-                                      <td>{finding.Category}</td>
-                                      <td style={{ maxWidth: '300px' }}>{finding.Description}</td>
-                                      <td>{finding.Service}</td>
-                                      <td>{finding.Port || '-'}</td>
-                                      <td>
-                                        <span className={getSeverityClass(finding.Severity)}>
-                                          {finding.Severity}
-                                        </span>
-                                      </td>
-                                      <td>
-                                        {Object.entries(finding.Data || {}).map(([k, v]) => (
-                                          <div key={k} style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                                            <strong>{k}:</strong> {v}
-                                          </div>
-                                        ))}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-
-                          {phase.RawOutput && (
-=======
                             </tr>
                           </thead>
                           <tbody>
@@ -663,7 +447,7 @@ function App() {
                           </tbody>
                         </table>
                             </div>
-                          )}
+                      )}
                           {/* Show tool errors or important raw output if present */}
                           {phase.RawOutput && phase.RawOutput.toLowerCase().includes('not found') && (
                             <div className="ss-error" style={{ marginTop: '1rem', fontSize: '0.95rem' }}>
@@ -672,23 +456,15 @@ function App() {
                           )}
                           {/* Optionally, show raw output toggle for advanced users */}
                           {phase.RawOutput && !phase.RawOutput.toLowerCase().includes('not found') && (
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                             <details style={{ marginTop: '1rem' }}>
                               <summary style={{ color: '#94a3b8', cursor: 'pointer', marginBottom: '0.5rem' }}>
                                 Raw Output
                               </summary>
                               <pre className="ss-code">{phase.RawOutput}</pre>
-<<<<<<< HEAD
-                            </details>
-                          )}
-                        </div>
-                      </details>
-=======
                         </details>
                       )}
                         </div>
                     </details>
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
                     </div>
                   ))}
                 </div>
@@ -718,23 +494,6 @@ function App() {
         {view === 'logs' && (
           <div className="ss-card">
             <h2>📋 System Logs</h2>
-<<<<<<< HEAD
-            <button 
-              className="ss-button-secondary mb-3" 
-              onClick={fetchLogs} 
-              disabled={logsLoading}
-            >
-              {logsLoading ? (
-                <span className="ss-loading">
-                  <div className="ss-spinner"></div>
-                  <span>Refreshing...</span>
-                </span>
-              ) : (
-                '🔄 Refresh Logs'
-              )}
-            </button>
-
-=======
             <div className="ss-input-group" style={{marginBottom:'1rem', flexWrap:'wrap', gap:'0.5rem'}}>
               <input
                 className="ss-input"
@@ -773,31 +532,16 @@ function App() {
                 )}
             </button>
             </div>
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
             {logsError && (
               <div className="ss-error">
                 <strong>Error:</strong> {logsError}
               </div>
             )}
-<<<<<<< HEAD
-
-=======
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
             {logs && logs.length === 0 && (
               <div className="text-center" style={{ color: '#94a3b8', padding: '2rem' }}>
                 No logs found.
               </div>
             )}
-<<<<<<< HEAD
-
-            {logs && logs.length > 0 && (
-              <div className="ss-code" style={{ maxHeight: '400px', overflow: 'auto' }}>
-                {logs.map((log, i) => (
-                  <div key={i} style={{ marginBottom: '0.5rem', padding: '0.25rem 0' }}>
-                    <span style={{ color: '#00d4ff' }}>[{i + 1}]</span> {log}
-                  </div>
-                ))}
-=======
             {logs && logs.length > 0 && (
               <div className="ss-table-wrapper">
                 <table className="ss-table">
@@ -826,7 +570,6 @@ function App() {
                   <span style={{color:'#00d4ff'}}>Page {logPage} of {totalPages}</span>
                   <button className="ss-button-secondary" onClick={()=>setLogPage(p=>Math.min(totalPages,p+1))} disabled={logPage===totalPages}>Next</button>
                 </div>
->>>>>>> 27e939d (Fix backend scanner, update LLM service, improve frontend stability)
               </div>
             )}
           </div>
@@ -860,65 +603,7 @@ function App() {
                   {backendStatus === 'unknown' && '❓ Unknown'}
                 </div>
               </div>
-              <div className="ss-feature-card">
-                <div className="ss-feature-icon">🤖</div>
-                <h3>LLM Service</h3>
-                <div className={getStatusClass(llmStatus)}>
-                  {llmStatus === 'ok' && '✅ Online'}
-                  {llmStatus === 'down' && '❌ Offline'}
-                  {llmStatus === 'unknown' && '❓ Unknown'}
-                </div>
-              </div>
             </div>
-          </div>
-        )}
-
-        {view === 'llm' && (
-          <div className="ss-card">
-            <h2>🤖 AI Threat Analysis</h2>
-            <textarea
-              className="ss-input"
-              value={llmInput}
-              onChange={e => setLlmInput(e.target.value)}
-              placeholder="Paste suspicious text, logs, or threat data here for AI analysis..."
-              rows={8}
-              style={{ 
-                width: '100%', 
-                minHeight: '200px', 
-                resize: 'vertical',
-                fontFamily: 'monospace'
-              }}
-              disabled={llmLoading}
-            />
-            <button 
-              className="ss-button mt-2" 
-              onClick={handleLlmAnalyze} 
-              disabled={llmLoading || !llmInput}
-            >
-              {llmLoading ? (
-                <span className="ss-loading">
-                  <div className="ss-spinner"></div>
-                  <span>Analyzing...</span>
-                </span>
-              ) : (
-                '🔍 Analyze with AI'
-              )}
-            </button>
-
-            {llmError && (
-              <div className="ss-error">
-                <strong>Error:</strong> {llmError}
-              </div>
-            )}
-
-            {llmResult && (
-              <div className="ss-llm-analysis">
-                <h3>Analysis Results</h3>
-                <pre style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#e0e6ed' }}>
-                  {llmResult}
-                </pre>
-              </div>
-            )}
           </div>
         )}
       </main>
